@@ -16,6 +16,14 @@ public class MCTS {
     private final int maxDepth;
 
     public MCTS(double cMax, int maxIterations, Simulator simulator, double fMax, double c, int maxDepth) {
+        if (maxIterations <= 0 || cMax <= 0 || maxDepth <= 0 || c < 0) {
+            throw new IllegalArgumentException("parâmetros inválidos");
+        }
+
+        if (fMax < maxDepth + cMax) {
+            throw new IllegalArgumentException("fMax inválido. fMax deve ser maior que maxDepth + cMax");
+        }
+
         this.cMax = cMax;
         this.maxIterations = maxIterations;
         this.simulator = simulator;
@@ -27,12 +35,24 @@ public class MCTS {
     public Iterator<State> solve(Ilayout start, Ilayout goal) {
         State root = new State(start, null, cMax);
 
+        double bestCost = Double.POSITIVE_INFINITY;
+
         for (int i = 0; i < maxIterations; i++) {
             State leaf = select(root);
-            List<State> children = leaf.expand(cMax);
+
+            if (leaf.layout.isGoal(goal)) {
+                backpropagate(leaf, 0);
+                continue;
+            }
+
+            List<State> children = leaf.expand(cMax, maxDepth);
+            if (children.isEmpty()) {
+                backpropagate(leaf, cMax);
+                continue;
+            }
 
             for (State child : children) {
-                SimResult result = simulator.simulate(child.layout, goal);
+                SimResult result = simulator.simulate(child.getLayout(), goal);
                 backpropagate(child, result.getCost());
             }
         }
@@ -80,6 +100,7 @@ public class MCTS {
         private final State father;
         private final double g;
         private final List<State> children;
+        private final int depth;
         private int visitCount;
         private double sim;
 
@@ -88,6 +109,7 @@ public class MCTS {
             this.father = father;
             this.sim = cmax;
 
+            depth = (father == null) ? 0 : father.depth + 1;
             g = (father == null) ? 0.0 : father.g + layout.getK();
 
             children = new ArrayList<>();
@@ -101,6 +123,10 @@ public class MCTS {
 
         public void addVisit() {
             visitCount++;
+        }
+
+        public Ilayout getLayout() {
+            return layout;
         }
 
         public List<State> getChildren() {
@@ -119,7 +145,11 @@ public class MCTS {
             return children.isEmpty();
         }
 
-        public List<State> expand(double cMax) {
+        public List<State> expand(double cMax, int maxDepth) {
+            if (depth >= maxDepth) {
+                return getChildren();
+            }
+
             for (Ilayout l : layout.children()) {
                 children.add(new State(l, this, cMax));
             }
