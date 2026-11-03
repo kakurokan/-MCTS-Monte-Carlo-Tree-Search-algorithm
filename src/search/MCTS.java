@@ -8,18 +8,20 @@ import java.util.Iterator;
 import java.util.List;
 
 public class MCTS {
-    private final int cMax;
+    private final double cMax;
     private final int maxIterations;
     private final Simulator simulator;
     private final double fMax;
     private final double c;
+    private final int maxDepth;
 
-    public MCTS(int cMax, int maxIterations, Simulator simulator, double fMax, double c) {
+    public MCTS(double cMax, int maxIterations, Simulator simulator, double fMax, double c, int maxDepth) {
         this.cMax = cMax;
         this.maxIterations = maxIterations;
         this.simulator = simulator;
         this.fMax = fMax;
         this.c = c;
+        this.maxDepth = maxDepth;
     }
 
     public Iterator<State> solve(Ilayout start, Ilayout goal) {
@@ -31,17 +33,17 @@ public class MCTS {
 
             for (State child : children) {
                 SimResult result = simulator.simulate(child.layout, goal);
-                backpropagate(leaf, result.getCost());
+                backpropagate(child, result.getCost());
             }
         }
     }
 
-    public void backpropagate(State leaf, double simCost) {
-        State atual = leaf;
+    public void backpropagate(State child, double simCost) {
+        State atual = child;
 
         while (atual != null) {
             atual.addVisit();
-            atual.updateSim(leaf.getG() - atual.getG() + simCost);
+            atual.updateSim(child.getG() - atual.getG() + simCost);
             atual = atual.getFather();
         }
     }
@@ -103,6 +105,10 @@ public class MCTS {
 
         public List<State> getChildren() {
             return Collections.unmodifiableList(children);
+        }
+
+        public double getSim() {
+            return sim;
         }
 
         public int getVisitCount() {
