@@ -1,7 +1,6 @@
-package test.puzzles;
+package puzzles;
 
 import org.junit.jupiter.api.Test;
-import puzzles.BallSortLayout;
 import search.BestFirst;
 
 import java.util.Iterator;
