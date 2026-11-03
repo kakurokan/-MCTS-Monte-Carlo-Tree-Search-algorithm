@@ -3,9 +3,13 @@ package search;
 import core.Ilayout;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class MCTS {
+
+    private final int cMax;
+
     public static class State {
         private final Ilayout layout;
         private final State father;
@@ -13,9 +17,8 @@ public class MCTS {
         private final List<State> children;
         private int visitCount;
         private double sim;
-        private List<Ilayout> unexpanded;
 
-        public State(Ilayout layout, State father, int cmax) {
+        public State(Ilayout layout, State father, double cmax) {
             this.layout = layout;
             this.father = father;
             this.sim = cmax;
@@ -23,7 +26,6 @@ public class MCTS {
             g = (father == null) ? 0.0 : father.g + layout.getK();
 
             children = new ArrayList<>();
-            unexpanded = new ArrayList<>(layout.children());
 
             visitCount = 0;
         }
@@ -34,6 +36,21 @@ public class MCTS {
 
         public void addVisit() {
             visitCount++;
+        }
+
+        public List<State> getChildren() {
+            return Collections.unmodifiableList(children);
+        }
+
+        public boolean isLeaf() {
+            return children.isEmpty();
+        }
+
+        public List<State> expand(double cMax) {
+            for (Ilayout l : layout.children()) {
+                children.add(new State(l, this, cMax));
+            }
+            return getChildren();
         }
 
         public void updateSim(double candidateSim) {
