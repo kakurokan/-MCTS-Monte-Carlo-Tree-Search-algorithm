@@ -2,10 +2,7 @@ package search;
 
 import core.Ilayout;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 public class MCTS {
     private final double cMax;
@@ -21,7 +18,7 @@ public class MCTS {
         }
 
         if (fMax < maxDepth + cMax) {
-            throw new IllegalArgumentException("fMax inválido. fMax deve ser maior que maxDepth + cMax");
+            throw new IllegalArgumentException("fMax inválido. fMax deve ser maior ou igual à maxDepth + cMax");
         }
 
         this.cMax = cMax;
@@ -36,12 +33,21 @@ public class MCTS {
         State root = new State(start, null, cMax);
 
         double bestCost = Double.POSITIVE_INFINITY;
+        State bestNode = null;
+        List<Ilayout> bestTail = List.of();
 
         for (int i = 0; i < maxIterations; i++) {
             State leaf = select(root);
 
-            if (leaf.layout.isGoal(goal)) {
+            if (leaf.getLayout().isGoal(goal)) {
+                if (leaf.getG() < bestCost) {
+                    bestNode = leaf;
+                    bestCost = leaf.getG();
+                    bestTail = List.of();
+                }
+
                 backpropagate(leaf, 0);
+                if (bestCost == 0) break;
                 continue;
             }
 
@@ -53,9 +59,34 @@ public class MCTS {
 
             for (State child : children) {
                 SimResult result = simulator.simulate(child.getLayout(), goal);
+                double total = child.getG() + result.getCost();
+                if (result.isSolved() && total < bestCost) {
+                    bestNode = child;
+                    bestCost = total;
+                    bestTail = result.getPath();
+                }
+
                 backpropagate(child, result.getCost());
             }
         }
+
+        if (bestNode == null) {
+            return null;
+        }
+
+        State end = bestNode;
+        for (Ilayout l : bestTail) {
+            end = new State(l, end, cMax);
+        }
+
+        LinkedList<State> path = new LinkedList<>();
+        State atual = end;
+        while (atual != null) {
+            path.addFirst(atual);
+            atual = atual.getFather();
+        }
+
+        return path.iterator();
     }
 
     public void backpropagate(State child, double simCost) {
@@ -151,7 +182,9 @@ public class MCTS {
             }
 
             for (Ilayout l : layout.children()) {
-                children.add(new State(l, this, cMax));
+                if (father == null || !l.equals(father.layout)) {
+                    children.add(new State(l, this, cMax));
+                }
             }
             return getChildren();
         }
