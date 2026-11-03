@@ -2,9 +2,7 @@ package search;
 
 import core.Ilayout;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 /**
  * Implementa a fase de simulação do MCTS. A partir de uma configuração, faz N
@@ -85,23 +83,20 @@ public class Simulator {
      */
     private SimResult rollout(Ilayout start, Ilayout goal) {
         List<Ilayout> path = new ArrayList<>();
-        Ilayout current = start, prev = null;
+        Set<Ilayout> visited = new HashSet<>();
+        visited.add(start);
+        Ilayout current = start;
         double cost = 0;
 
         while(cost < cMax){
             if(current.isGoal(goal)) {return new SimResult(path,cost);}
             List<Ilayout> succ = current.children();
-
-            if(prev !=null){
-                final Ilayout previous = prev;
-                succ.removeIf(s -> s.equals(previous));
-            }
+            succ.removeIf(visited::contains);
             if(succ.isEmpty()){
                 return new SimResult(null,cMax);
             }
-            prev = current;
             current = succ.get(rnd.nextInt(succ.size()));
-
+            visited.add(current);
             cost+= current.getK();
             path.add(current);
         }
