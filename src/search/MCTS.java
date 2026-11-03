@@ -4,11 +4,35 @@ import core.Ilayout;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 public class MCTS {
-
     private final int cMax;
+    private final int maxIterations;
+    private final Simulator simulator;
+
+    public Iterator<State> solve(Ilayout start, Ilayout goal) {
+        State root = new State(start, null, cMax);
+
+        for (int i = 0; i < maxIterations; i++) {
+            State leaf = select(root);
+            List<State> children = leaf.expand(cMax);
+
+            for (State child : children) {
+                SimResult result = simulator.simulate(child.layout, goal);
+                backpropagate(l, result);
+            }
+        }
+    }
+
+    public State select(State root) {
+        State atual = root;
+        while (!atual.isLeaf()) {
+            atual = bestChild(atual);
+        }
+        return atual;
+    }
 
     public static class State {
         private final Ilayout layout;
