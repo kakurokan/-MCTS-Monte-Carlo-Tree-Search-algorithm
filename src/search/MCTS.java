@@ -23,7 +23,21 @@ public class MCTS {
             g = (father == null) ? 0.0 : father.g + layout.getK();
 
             children = new ArrayList<>();
+            unexpanded = new ArrayList<>(layout.children());
+
             visitCount = 0;
+        }
+
+        public double getG() {
+            return g;
+        }
+
+        public double reward() {
+            
+        }
+
+        public double ucb() {
+
         }
     }
 
