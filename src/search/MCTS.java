@@ -4,6 +4,15 @@ import core.Ilayout;
 
 import java.util.*;
 
+/**
+ * Implementação do algoritmo Monte Carlo Tree Search (MCTS) para encontrar um caminho
+ * de custo mínimo entre uma configuração inicial e uma configuração objetivo.
+ * Em cada iteração, seleciona uma folha da árvore via UCB, expande-a, simula a partir
+ * de cada filho e retropropaga o custo estimado até à raiz.
+ *
+ * @inv maxIterations > 0, cMax > 0, maxDepth > 0, c >= 0
+ * @inv fMax >= maxDepth + cMax
+ */
 public class MCTS {
     private final double cMax;
     private final int maxIterations;
@@ -12,6 +21,20 @@ public class MCTS {
     private final double c;
     private final int maxDepth;
 
+/**
+ * Cria uma instância do MCTS com os parâmetros indicados.
+ *
+ * @param cMax          Custo atribuído a uma simulação sem solução (penalização). Tem de ser positivo.
+ * @param maxIterations Número máximo de iterações do algoritmo. Tem de ser positivo.
+ * @param simulator     O simulador usado para estimar o custo a partir de um nó. Não pode ser nulo.
+ * @param fMax          Custo máximo usado para normalizar a recompensa. Tem de ser >= maxDepth + cMax.
+ * @param c             Constante de exploração do UCB. Não pode ser negativa.
+ * @param maxDepth      Profundidade máxima da árvore de pesquisa. Tem de ser positiva.
+ * @throws IllegalArgumentException se algum dos parâmetros for inválido.
+ * @pre maxIterations > 0 && cMax > 0 && maxDepth > 0 && c >= 0
+ * @pre fMax >= maxDepth + cMax
+ * @pre simulator != null
+ */
     public MCTS(double cMax, int maxIterations, Simulator simulator, double fMax, double c, int maxDepth) {
         if (maxIterations <= 0 || cMax <= 0 || maxDepth <= 0 || c < 0) {
             throw new IllegalArgumentException("parâmetros inválidos");
@@ -29,6 +52,19 @@ public class MCTS {
         this.maxDepth = maxDepth;
     }
 
+/**
+ * Executa o MCTS a partir da configuração inicial, procurando o caminho de menor custo
+ * até à configuração objetivo encontrado durante as iterações.
+ *
+ * @param start A configuração inicial. Não pode ser nula.
+ * @param goal  A configuração objetivo. Não pode ser nula.
+ * @return Iterador sobre os estados do melhor caminho encontrado, da raiz até ao objetivo,
+ * ou {@code null} se nenhuma solução tiver sido encontrada.
+ * @pre start != null && goal != null
+ * @pos Se o resultado não for nulo, o primeiro estado corresponde a {@code start} e o último satisfaz isGoal(goal).
+ * @pos Se o resultado não for nulo, cada estado é sucessor do anterior por um único movimento legal.
+ * @pos {@code start} e {@code goal} não são modificadas.
+ */
     public Iterator<State> solve(Ilayout start, Ilayout goal) {
         State root = new State(start, null, cMax);
 
@@ -89,6 +125,16 @@ public class MCTS {
         return path.iterator();
     }
 
+/**
+ * Propaga o resultado de uma simulação desde o nó indicado até à raiz, incrementando
+ * o número de visitas e atualizando o melhor custo estimado de cada antecessor.
+ *
+ * @param child   O nó a partir do qual foi feita a simulação. Não pode ser nulo.
+ * @param simCost O custo obtido na simulação a partir de {@code child}.
+ * @pre child != null && simCost >= 0
+ * @pos O número de visitas de {@code child} e de todos os seus antecessores é incrementado em 1.
+ * @pos Para cada antecessor a, a.getSim() <= child.getG() - a.getG() + simCost.
+ */
     public void backpropagate(State child, double simCost) {
         State atual = child;
 
@@ -99,6 +145,17 @@ public class MCTS {
         }
     }
 
+/**
+ * Desce na árvore a partir da raiz, escolhendo em cada nível o melhor filho segundo o UCB,
+ * até atingir uma folha.
+ *
+ * @param root A raiz da árvore de pesquisa. Não pode ser nula.
+ * @return A folha selecionada.
+ * @pre root != null
+ * @pos O resultado nunca é nulo.
+ * @pos result.isLeaf() == true
+ * @pos A árvore não é modificada.
+ */
     public State select(State root) {
         State atual = root;
         while (!atual.isLeaf()) {
@@ -107,6 +164,15 @@ public class MCTS {
         return atual;
     }
 
+/**
+ * Escolhe o filho de um nó a explorar. Filhos ainda não visitados têm prioridade;
+ * caso contrário, é escolhido o filho com maior valor UCB.
+ *
+ * @param atual O nó cujos filhos são avaliados. Não pode ser nulo nem folha.
+ * @return O filho escolhido.
+ * @pre atual != null && !atual.isLeaf()
+ * @pos O resultado pertence a atual.getChildren().
+ */
     private State bestChild(State atual) {
         State best = null;
 
@@ -126,6 +192,15 @@ public class MCTS {
         return best;
     }
 
+/**
+ * Representa um nó da árvore de pesquisa do MCTS, associado a uma configuração do problema,
+ * guardando o custo acumulado desde a raiz, o número de visitas e o melhor custo
+ * estimado (sim) obtido nas simulações a partir deste nó.
+ *
+ * @inv getG() >= 0 e getG() = 0 se e só se o nó for a raiz
+ * @inv getVisitCount() >= 0
+ * @inv depth = profundidade do pai + 1 (0 na raiz)
+ */
     public static class State {
         private final Ilayout layout;
         private final State father;
@@ -135,6 +210,16 @@ public class MCTS {
         private int visitCount;
         private double sim;
 
+/**
+ * Cria um novo nó da árvore.
+ *
+ * @param layout A configuração associada a este nó. Não pode ser nula.
+ * @param father O nó pai, ou {@code null} se este nó for a raiz.
+ * @param cmax   Valor inicial do custo estimado (sim) deste nó.
+ * @pre layout != null && cmax > 0
+ * @pos getG() = father.getG() + layout.getK(), ou 0 se father == null.
+ * @pos getVisitCount() = 0 && isLeaf() == true && getSim() = cmax
+ */
         public State(Ilayout layout, State father, double cmax) {
             this.layout = layout;
             this.father = father;
@@ -148,34 +233,85 @@ public class MCTS {
             visitCount = 0;
         }
 
+/**
+ * Devolve o custo acumulado desde a raiz até este nó.
+ *
+ * @return O custo g deste nó.
+ * @pos getG() >= 0
+ */
         public double getG() {
             return g;
         }
 
+/**
+ * Incrementa o número de visitas deste nó.
+ *
+ * @pos getVisitCount() = old getVisitCount() + 1
+ */
         public void addVisit() {
             visitCount++;
         }
 
+/**
+ * Devolve a configuração associada a este nó.
+ *
+ * @return A configuração deste nó.
+ * @pos O resultado nunca é nulo.
+ */
         public Ilayout getLayout() {
             return layout;
         }
 
+/**
+ * Devolve os filhos deste nó.
+ *
+ * @return Lista não modificável dos filhos. Vazia se o nó ainda não tiver sido expandido.
+ * @pos O resultado nunca é nulo.
+ */
         public List<State> getChildren() {
             return Collections.unmodifiableList(children);
         }
 
+/**
+ * Devolve o melhor custo estimado, a partir deste nó até ao objetivo, obtido nas simulações.
+ *
+ * @return O valor sim deste nó.
+ */
         public double getSim() {
             return sim;
         }
 
+/**
+ * Devolve o número de vezes que este nó foi visitado.
+ *
+ * @return O número de visitas.
+ * @pos getVisitCount() >= 0
+ */
         public int getVisitCount() {
             return visitCount;
         }
 
+/**
+ * Verifica se este nó é uma folha (não tem filhos).
+ *
+ * @return {@code true} se o nó não tiver filhos; {@code false} caso contrário.
+ */
         public boolean isLeaf() {
             return children.isEmpty();
         }
 
+/**
+ * Expande este nó, criando um filho para cada configuração sucessora, exceto a do pai.
+ * Se a profundidade máxima tiver sido atingida, o nó não é expandido.
+ *
+ * @param cMax     Valor inicial do custo estimado dos novos filhos.
+ * @param maxDepth Profundidade máxima permitida na árvore.
+ * @return Lista não modificável dos filhos deste nó.
+ * @pre cMax > 0 && maxDepth > 0
+ * @pos Se depth >= maxDepth, os filhos não são alterados.
+ * @pos Nenhum filho tem configuração igual à do pai deste nó.
+ * @pos O resultado nunca é nulo.
+ */
         public List<State> expand(double cMax, int maxDepth) {
             if (depth >= maxDepth) {
                 return getChildren();
@@ -189,20 +325,48 @@ public class MCTS {
             return getChildren();
         }
 
+/**
+ * Atualiza o custo estimado deste nó caso o candidato seja menor.
+ *
+ * @param candidateSim O novo custo estimado candidato.
+ * @pos getSim() = min(old getSim(), candidateSim)
+ */
         public void updateSim(double candidateSim) {
             if (candidateSim < sim) {
                 sim = candidateSim;
             }
         }
 
+/**
+ * Calcula a recompensa normalizada deste nó, com base no custo total estimado (g + sim).
+ *
+ * @param fMax Custo máximo usado para normalização. Tem de ser positivo.
+ * @return 1 - (getG() + getSim()) / fMax (quanto maior, melhor).
+ * @pre fMax > 0
+ */
         public double reward(double fMax) {
             return 1 - (getG() + sim) / fMax;
         }
 
+/**
+ * Calcula o valor UCB (Upper Confidence Bound) deste nó, combinando a recompensa
+ * (aproveitamento) com um termo de exploração.
+ *
+ * @param fMax            Custo máximo usado para normalizar a recompensa.
+ * @param c               Constante de exploração.
+ * @param totalSimulation Número de visitas do nó pai.
+ * @return reward(fMax) + c * sqrt(ln(totalSimulation) / getVisitCount()).
+ * @pre fMax > 0 && c >= 0 && totalSimulation >= 1 && getVisitCount() > 0
+ */
         public double ucb(double fMax, double c, int totalSimulation) {
             return reward(fMax) + c * Math.sqrt(Math.log(totalSimulation) / visitCount);
         }
 
+/**
+ * Devolve o nó pai deste nó.
+ *
+ * @return O nó pai, ou {@code null} se este nó for a raiz.
+ */
         public State getFather() {
             return father;
         }
