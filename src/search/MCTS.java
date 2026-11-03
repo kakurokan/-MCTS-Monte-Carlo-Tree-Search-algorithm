@@ -11,6 +11,8 @@ public class MCTS {
     private final int cMax;
     private final int maxIterations;
     private final Simulator simulator;
+    private final double fMax;
+    private final double c;
 
     public Iterator<State> solve(Ilayout start, Ilayout goal) {
         State root = new State(start, null, cMax);
@@ -32,6 +34,25 @@ public class MCTS {
             atual = bestChild(atual);
         }
         return atual;
+    }
+
+    private State bestChild(State atual) {
+        State best = null;
+
+        double bestValue = Double.NEGATIVE_INFINITY;
+
+        for (State child : atual.getChildren()) {
+            if (child.getVisitCount() == 0) return child;
+
+            double value = child.ucb(fMax, c, atual.getVisitCount());
+
+            if (value > bestValue) {
+                best = child;
+                bestValue = value;
+            }
+        }
+
+        return best;
     }
 
     public static class State {
@@ -64,6 +85,10 @@ public class MCTS {
 
         public List<State> getChildren() {
             return Collections.unmodifiableList(children);
+        }
+
+        public int getVisitCount() {
+            return visitCount;
         }
 
         public boolean isLeaf() {
