@@ -59,7 +59,11 @@ public class Simulator {
         SimResult result = new SimResult(null, cMax);
         for(int i=0; i<n;i++){
             SimResult temp = this.rollout(start,goal);
-            result = temp.getCost() < result.getCost() ? temp : result;
+            boolean cheaper = temp.getCost() <  result.getCost();
+            boolean sameCostSolved =  temp.getCost() == result.getCost() && temp.isSolved() && !result.isSolved();
+            if(cheaper || sameCostSolved){
+                result = temp;
+            }
         }
         return result;
     }
@@ -100,6 +104,10 @@ public class Simulator {
 
             cost+= current.getK();
             path.add(current);
+        }
+
+        if(cost <= cMax && current.isGoal(goal)){
+            return new SimResult(path,cMax);
         }
         return new SimResult(null,cMax);
     }
