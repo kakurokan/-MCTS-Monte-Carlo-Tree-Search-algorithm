@@ -32,12 +32,22 @@ public class MCTS {
             return g;
         }
 
-        public double reward() {
-            
+        public void addVisit() {
+            visitCount++;
         }
 
-        public double ucb() {
+        public void updateSim(double candidateSim) {
+            if (candidateSim < sim) {
+                sim = candidateSim;
+            }
+        }
 
+        public double reward(double fMax) {
+            return 1 - (getG() + sim) / fMax;
+        }
+
+        public double ucb(double fMax, double c, int totalSimulation) {
+            return reward(fMax) + c * Math.sqrt(Math.log(totalSimulation) / visitCount);
         }
     }
 
