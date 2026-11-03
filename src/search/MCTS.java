@@ -14,6 +14,14 @@ public class MCTS {
     private final double fMax;
     private final double c;
 
+    public MCTS(int cMax, int maxIterations, Simulator simulator, double fMax, double c) {
+        this.cMax = cMax;
+        this.maxIterations = maxIterations;
+        this.simulator = simulator;
+        this.fMax = fMax;
+        this.c = c;
+    }
+
     public Iterator<State> solve(Ilayout start, Ilayout goal) {
         State root = new State(start, null, cMax);
 
@@ -23,8 +31,18 @@ public class MCTS {
 
             for (State child : children) {
                 SimResult result = simulator.simulate(child.layout, goal);
-                backpropagate(l, result);
+                backpropagate(leaf, result.getCost());
             }
+        }
+    }
+
+    public void backpropagate(State leaf, double simCost) {
+        State atual = leaf;
+
+        while (atual != null) {
+            atual.addVisit();
+            atual.updateSim(leaf.getG() - atual.getG() + simCost);
+            atual = atual.getFather();
         }
     }
 
@@ -114,6 +132,10 @@ public class MCTS {
 
         public double ucb(double fMax, double c, int totalSimulation) {
             return reward(fMax) + c * Math.sqrt(Math.log(totalSimulation) / visitCount);
+        }
+
+        public State getFather() {
+            return father;
         }
     }
 
