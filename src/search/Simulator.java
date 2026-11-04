@@ -83,27 +83,68 @@ public class Simulator {
      */
     private SimResult rollout(Ilayout start, Ilayout goal) {
         List<Ilayout> path = new ArrayList<>();
-        Set<Ilayout> visited = new HashSet<>();
-        visited.add(start);
+        Map<Ilayout, Integer> position = new HashMap<>();
         Ilayout current = start;
-        double cost = 0;
+        position.put(current, 0);
+        Ilayout previous = null;
+        double spent = 0;
 
-        while(cost < cMax){
-            if(current.isGoal(goal)) {return new SimResult(path,cost);}
-            List<Ilayout> succ = current.children();
-            succ.removeIf(visited::contains);
-            if(succ.isEmpty()){
+        while(true){
+            if(current.isGoal(goal)){
+                double cost = 0;
+                for(Ilayout l : path)cost+=l.getK();
+                return new SimResult(path,cost);
+            }
+            if(spent >= cMax){
                 return new SimResult(null,cMax);
             }
-            current = succ.get(rnd.nextInt(succ.size()));
-            visited.add(current);
-            cost+= current.getK();
-            path.add(current);
+
+            List<Ilayout> succ = current.children();
+            int r = this.chooseMovement(succ,previous);
+            if(r <0 ){
+                return new SimResult(null,cMax);
+            }
+            previous = current;
+            current = succ.get(r);
+            spent += current.getK();
+
+            Integer p = position.get(current);
+            if(p!=null) {
+                for(int k = path.size()-1; k>=p; k--){
+                    position.remove(path.remove(k));
+                }
+            }else {
+                path.add(current);
+                position.put(current, path.size());
+            }
+        }
+    }
+
+    /**
+     * Sorteia o índice de um sucessor, uniformemente entre os que não desfazem o
+     * movimento anterior.
+     *
+     * @param succ     Sucessores da configuração atual. Não pode ser nula.
+     * @param previous Configuração anterior, ou {@code null} no primeiro passo.
+     * @return Índice do sucessor escolhido, ou -1 se não houver nenhum válido
+     *         (lista vazia ou o único sucessor é a configuração anterior).
+     * @pos succ não é modificada.
+     */
+
+    private int chooseMovement(List<Ilayout> succ , Ilayout previous){
+        if(succ.isEmpty()){
+            return -1;
         }
 
-        if(cost <= cMax && current.isGoal(goal)){
-            return new SimResult(path,cMax);
+        int r = rnd.nextInt(succ.size());
+
+        if(previous != null && succ.get(r).equals(previous)){
+            if(succ.size() ==1) return -1;
+            int other = rnd.nextInt(succ.size()-1);
+            r = (other >= r) ? other +1 : other;
+
         }
-        return new SimResult(null,cMax);
-    }
+        return r;
+     }
+
 }
