@@ -44,8 +44,8 @@ public class Simulator {
      * @pos Os parâmetros ficam fixos durante toda a vida do simulador.
      */
     public Simulator(int n, double cMax, Random rnd) {
-        if(n<=0)  throw new IllegalArgumentException("n tem de ser n >=1");
-        if(cMax<=0)  throw new IllegalArgumentException("cMax tem de ser n > 0");
+        if (n <= 0) throw new IllegalArgumentException("n tem de ser n >=1");
+        if (cMax <= 0) throw new IllegalArgumentException("cMax tem de ser n > 0");
         this.n = n;
         this.cMax = cMax;
         this.rnd = rnd;
@@ -58,7 +58,7 @@ public class Simulator {
      * @param start A configuração onde começa a simulação. Não pode ser nula.
      * @param goal  A configuração objetivo. Não pode ser nula.
      * @return O resultado de menor custo entre os n rollouts; custo Cmax e caminho
-     *         nulo se nenhum rollout chegou ao objetivo.
+     * nulo se nenhum rollout chegou ao objetivo.
      * @pre start != null
      * @pre goal != null
      * @pos O resultado nunca é nulo.
@@ -66,13 +66,13 @@ public class Simulator {
      * @pos Se resultado.isSolved(), o caminho não tem configurações repetidas.
      * @pos As configurações start e goal não são modificadas.
      */
-    public SimResult simulate(Ilayout start,  Ilayout goal) {
+    public SimResult simulate(Ilayout start, Ilayout goal) {
         SimResult result = new SimResult(null, cMax);
-        for(int i=0; i<n;i++){
-            SimResult temp = this.rollout(start,goal);
-            boolean cheaper = temp.getCost() <  result.getCost();
-            boolean sameCostSolved =  temp.getCost() == result.getCost() && temp.isSolved() && !result.isSolved();
-            if(cheaper || sameCostSolved){
+        for (int i = 0; i < n; i++) {
+            SimResult temp = this.rollout(start, goal);
+            boolean cheaper = temp.getCost() < result.getCost();
+            boolean sameCostSolved = temp.getCost() == result.getCost() && temp.isSolved() && !result.isSolved();
+            if (cheaper || sameCostSolved) {
                 result = temp;
             }
         }
@@ -91,8 +91,8 @@ public class Simulator {
      *
      * @param start A configuração onde começa o rollout. Não pode ser nula.
      * @param goal  A configuração objetivo. Não pode ser nula.
-     * @return O custo e o caminho sem ciclos até ao objetivo (sem incluir start), se o
-     *         rollout o alcançou; custo cMax e caminho nulo caso contrário.
+     * @return O custo e o caminho até ao objetivo, se o rollout o alcançou;
+     * custo cMax e caminho nulo caso contrário.
      * @pre start != null
      * @pre goal != null
      * @pos O resultado nunca é nulo.
@@ -108,16 +108,20 @@ public class Simulator {
         Ilayout previous = null;
         double spent = 0;
 
-        while(true){
-            if(current.isGoal(goal)){
+        while (true) {
+            if (current.isGoal(goal)) {
                 double cost = 0;
-                for(Ilayout l : path)cost+=l.getK();
-                return new SimResult(path,cost);
+                for (Ilayout l : path) cost += l.getK();
+                return new SimResult(path, cost);
             }
+            if (spent >= cMax) {
+                return new SimResult(null, cMax);
+            }
+
             List<Ilayout> succ = current.children();
-            int r = this.chooseMovement(succ,previous);
-            if(r <0 ){
-                return new SimResult(null,cMax);
+            int r = this.chooseMovement(succ, previous);
+            if (r < 0) {
+                return new SimResult(null, cMax);
             }
             if(spent + succ.get(r).getK()  > cMax){
                 return new SimResult(null,cMax);
@@ -127,11 +131,11 @@ public class Simulator {
             spent += current.getK();
 
             Integer p = position.get(current);
-            if(p!=null) {
-                for(int k = path.size()-1; k>=p; k--){
+            if (p != null) {
+                for (int k = path.size() - 1; k >= p; k--) {
                     position.remove(path.remove(k));
                 }
-            }else {
+            } else {
                 path.add(current);
                 position.put(current, path.size());
             }
@@ -147,24 +151,22 @@ public class Simulator {
      *
      * @param succ     Sucessores da configuração atual. Não pode ser nula.
      * @param previous Configuração anterior, ou {@code null} no primeiro passo.
-     * @return Índice do sucessor escolhido, entre 0 e succ.size() - 1, ou -1 se não
-     *         houver nenhum válido (lista vazia, ou o único sucessor é a configuração
-     *         anterior).
-     * @pre succ != null
-     * @pos succ.get(resultado) não é igual a previous, quando resultado &gt;= 0.
+     * @return Índice do sucessor escolhido, ou -1 se não houver nenhum válido
+     * (lista vazia ou o único sucessor é a configuração anterior).
      * @pos succ não é modificada.
      */
-    private int chooseMovement(List<Ilayout> succ , Ilayout previous){
-        if(succ.isEmpty()){
+
+    private int chooseMovement(List<Ilayout> succ, Ilayout previous) {
+        if (succ.isEmpty()) {
             return -1;
         }
 
         int r = rnd.nextInt(succ.size());
 
-        if(succ.get(r).equals(previous)){
-            if(succ.size() ==1) return -1;
-            int other = rnd.nextInt(succ.size()-1);
-            r = (other >= r) ? other +1 : other;
+        if (succ.get(r).equals(previous)) {
+            if (succ.size() == 1) return -1;
+            int other = rnd.nextInt(succ.size() - 1);
+            r = (other >= r) ? other + 1 : other;
 
         }
         return r;
