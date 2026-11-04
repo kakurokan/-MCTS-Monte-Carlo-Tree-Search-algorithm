@@ -24,7 +24,7 @@ public class MCTS {
 /**
  * Cria uma instância do MCTS com os parâmetros indicados.
  *
- * @param cMax          Custo atribuído a uma simulação sem solução (penalização). Tem de ser positivo.
+ * @param cMax          Custo atribuído a uma simulação sem solução. Tem de ser positivo.
  * @param maxIterations Número máximo de iterações do algoritmo. Tem de ser positivo.
  * @param simulator     O simulador usado para estimar o custo a partir de um nó. Não pode ser nulo.
  * @param fMax          Custo máximo usado para normalizar a recompensa. Tem de ser >= maxDepth + cMax.
@@ -64,6 +64,7 @@ public class MCTS {
  * @pos Se o resultado não for nulo, o primeiro estado corresponde a {@code start} e o último satisfaz isGoal(goal).
  * @pos Se o resultado não for nulo, cada estado é sucessor do anterior por um único movimento legal.
  * @pos {@code start} e {@code goal} não são modificadas.
+ * @pos Termina antes de maxIterations se a árvore ficar totalmente explorada (raiz esgotada).
  */
     public Iterator<State> solve(Ilayout start, Ilayout goal) {
         State root = new State(start, null, cMax);
@@ -73,6 +74,8 @@ public class MCTS {
         List<Ilayout> bestTail = List.of();
 
         for (int i = 0; i < maxIterations; i++) {
+            if (root.isExhausted()) break;
+
             State leaf = select(root);
 
             if (leaf.getLayout().isGoal(goal)) {
@@ -83,13 +86,14 @@ public class MCTS {
                 }
 
                 backpropagate(leaf, 0);
-                if (bestCost == 0) break;
+                leaf.markExhausted();
                 continue;
             }
 
             List<State> children = leaf.expand(cMax, maxDepth);
             if (children.isEmpty()) {
                 backpropagate(leaf, cMax);
+                leaf.markExhausted();
                 continue;
             }
 
@@ -151,9 +155,9 @@ public class MCTS {
  *
  * @param root A raiz da árvore de pesquisa. Não pode ser nula.
  * @return A folha selecionada.
- * @pre root != null
+ * @pre root != null && !root.isExhausted()
  * @pos O resultado nunca é nulo.
- * @pos result.isLeaf() == true
+ * @pos result.isLeaf() == true && !result.isExhausted()
  * @pos A árvore não é modificada.
  */
     public State select(State root) {
@@ -165,13 +169,13 @@ public class MCTS {
     }
 
 /**
- * Escolhe o filho de um nó a explorar. Filhos ainda não visitados têm prioridade;
- * caso contrário, é escolhido o filho com maior valor UCB.
+ * Escolhe o filho de um nó a explorar, ignorando filhos esgotados. Filhos ainda não
+ * visitados têm prioridade; caso contrário, é escolhido o filho com maior valor UCB.
  *
- * @param atual O nó cujos filhos são avaliados. Não pode ser nulo nem folha.
+ * @param atual O nó cujos filhos são avaliados. Não pode ser nulo, folha nem esgotado.
  * @return O filho escolhido.
- * @pre atual != null && !atual.isLeaf()
- * @pos O resultado pertence a atual.getChildren().
+ * @pre atual != null && !atual.isLeaf() && !atual.isExhausted()
+ * @pos O resultado pertence a atual.getChildren() e não está esgotado.
  */
     private State bestChild(State atual) {
         State best = null;
@@ -179,6 +183,7 @@ public class MCTS {
         double bestValue = Double.NEGATIVE_INFINITY;
 
         for (State child : atual.getChildren()) {
+            if (child.isExhausted()) continue;
             if (child.getVisitCount() == 0) return child;
 
             double value = child.ucb(fMax, c, atual.getVisitCount());
@@ -209,6 +214,7 @@ public class MCTS {
         private final int depth;
         private int visitCount;
         private double sim;
+        private boolean exhausted = false;
 
 /**
  * Cria um novo nó da árvore.
@@ -323,6 +329,36 @@ public class MCTS {
                 }
             }
             return getChildren();
+        }
+
+/**
+ * Indica se não há mais nada a explorar abaixo deste nó.
+ *
+ * @return {@code true} se o nó for uma folha terminal (objetivo ou não expansível)
+ * ou se todos os seus filhos estiverem esgotados; {@code false} caso contrário.
+ */
+        public boolean isExhausted() {
+            return exhausted;
+        }
+
+/**
+ * Marca este nó como esgotado e propaga a marcação para cima: um antecessor
+ * fica esgotado quando todos os seus filhos estão esgotados.
+ *
+ * @pos isExhausted() == true
+ * @pos Todo o antecessor com todos os filhos esgotados fica esgotado.
+ */
+        public void markExhausted() {
+            State atual = this;
+            atual.exhausted = true;
+            while (atual.father != null) {
+                State pai = atual.father;
+                for (State f : pai.children) {
+                    if (!f.exhausted) return;
+                }
+                pai.exhausted = true;
+                atual = pai;
+            }
         }
 
 /**
