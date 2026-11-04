@@ -12,13 +12,13 @@ import java.util.Scanner;
 
 public class Main {
 
-    private static final double DEFAULT_CMAX = 200;
-    private static final int DEFAULT_N = 10;
-    private static final double DEFAULT_C = 0.05;
-    private static final int DEFAULT_ITERATIONS = 5000;
-    private static final int DEFAULT_MAX_DEPTH = 200;
-    private static final long DEFAULT_SEED = 42;
-
+    private static final double DEFAULT_CMAX = 500;    // era 200
+    private static final int    DEFAULT_N = 1;         // era 10
+    private static final double DEFAULT_C = 0.3;       // era 0.05
+    private static final int    DEFAULT_ITERATIONS = 15000; // era 5000
+    private static final int    DEFAULT_MAX_DEPTH = 60;     // era 200
+    private static final long   DEFAULT_SEED = 42;
+    // fmax = cMax + maxDepth (mantém-se)
     static void main(String[] args) throws Exception {
 
         double cMax     = args.length > 0 ? Double.parseDouble(args[0]) : DEFAULT_CMAX;

@@ -43,6 +43,10 @@ public class BallSortLayout implements Ilayout, Cloneable {
                 continue;
             }
 
+            if(isValidTube(sourceTube)) {
+                continue;
+            }
+
             char ball = sourceTube.peek();
 
             for (int j = 0; j < this.tubes.size(); j++) {
