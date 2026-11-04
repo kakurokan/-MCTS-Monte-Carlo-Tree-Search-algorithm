@@ -8,9 +8,11 @@ public class BallSortLayout implements Ilayout, Cloneable {
     private final int K;
     private final int maxTubeSize;
     private List<Stack<Character>> tubes;
+    private int hash;
 
     public BallSortLayout(String configuration) {
         K = 1;
+        hash = 0;
         tubes = new ArrayList<>();
         String[] lines = configuration.trim().split("\n");
         maxTubeSize = lines.length;
@@ -43,7 +45,7 @@ public class BallSortLayout implements Ilayout, Cloneable {
                 continue;
             }
 
-            if(isValidTube(sourceTube)) {
+            if (isValidTube(sourceTube)) {
                 continue;
             }
 
@@ -78,12 +80,16 @@ public class BallSortLayout implements Ilayout, Cloneable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         BallSortLayout that = (BallSortLayout) o;
+        if (hashCode() != that.hashCode()) return false;
         return Objects.equals(tubes, that.tubes);
     }
 
     @Override
     public int hashCode() {
-        return tubes.hashCode();
+        if (hash == 0) {
+            hash = tubes.hashCode();
+        }
+        return hash;
     }
 
     @Override
@@ -137,6 +143,7 @@ public class BallSortLayout implements Ilayout, Cloneable {
     public BallSortLayout clone() {
         try {
             BallSortLayout clone = (BallSortLayout) super.clone();
+            clone.hash = 0;
             clone.tubes = new ArrayList<>(this.tubes.size());
 
             for (Stack<Character> tube : this.tubes) {
