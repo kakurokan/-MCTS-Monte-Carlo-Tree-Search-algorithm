@@ -35,21 +35,21 @@ public class SimulatorTest {
 
     @Test
     public void shouldReturnCMaxAndNullPath_whenSimulationReachesMaxCostWithoutSolving() {
-        Simulator simulator = new Simulator(1, 1.0, new Random(42));
-        BallSortLayout startLayout = new BallSortLayout("A B E\nB A E");
-        BallSortLayout goalLayout = new BallSortLayout("A B E\nA B E");
+        Simulator simulator = new Simulator(1, 2.0, new Random(42));
+        BallSortLayout startLayout = new BallSortLayout("A B E E\nB A E E");
+        BallSortLayout goalLayout = new BallSortLayout("A B E E\nA B E E");
 
         SimResult result = simulator.simulate(startLayout, goalLayout);
 
         assertThat(result.isSolved()).isFalse();
-        assertThat(result.getCost()).isEqualTo(1.0);
+        assertThat(result.getCost()).isEqualTo(2.0);
         assertThat(result.getPath()).isNull();
     }
 
     @Test
     public void shouldReturnCMaxAndNullPath_whenStuckInDeadEnd() {
         Simulator simulator = new Simulator(1, 50.0, new Random());
-        BallSortLayout deadEndLayout = new BallSortLayout("A B\nB A");
+        BallSortLayout deadEndLayout = new BallSortLayout("A B \nB A");
         BallSortLayout goalLayout = new BallSortLayout("A B E\nA B E");
 
         SimResult result = simulator.simulate(deadEndLayout, goalLayout);
@@ -57,5 +57,14 @@ public class SimulatorTest {
         assertThat(result.isSolved()).isFalse();
         assertThat(result.getCost()).isEqualTo(50.0);
         assertThat(result.getPath()).isNull();
+    }
+
+    @Test
+    public void shouldThrowNullPointerException_whenRandomIsNull() {
+        Simulator simulator = new Simulator(1, 10.0, null);
+        BallSortLayout layout = new BallSortLayout("A B E\nB A E");
+
+        assertThatThrownBy(() -> simulator.simulate(layout, layout))
+                .isInstanceOf(NullPointerException.class);
     }
 }

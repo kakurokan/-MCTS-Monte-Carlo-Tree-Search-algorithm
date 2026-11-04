@@ -70,4 +70,38 @@ public class MCTSTest {
         assertThat(root.getVisitCount()).isEqualTo(1);
         assertThat(root.getSim()).isEqualTo(11.0);
     }
+
+    @Test
+    public void shouldCalculateCorrectReward_whenCostsAreGreaterThanZero() {
+        BallSortLayout layout = new BallSortLayout("A B E\nA B E");
+        MCTS.State root = new MCTS.State(layout, null, 50.0);
+
+        MCTS.State child1 = new MCTS.State(layout, root, 50.0);
+        MCTS.State child2 = new MCTS.State(layout, child1, 50.0);
+
+        child2.updateSim(20.0);
+
+        double reward = child2.reward(100.0);
+
+        assertThat(reward).isCloseTo(0.78, within(0.0001));
+    }
+
+    @Test
+    public void shouldNotThrowException_whenFMaxIsExactlyMaxDepthPlusCMax() {
+        Simulator sim = new Simulator(1, 10.0, new Random());
+
+        assertThatCode(() -> new MCTS(10.0, 100, sim, 15.0, 0.2, 5))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    public void shouldExpandAndGenerateChildren_whenDepthIsJustBelowMaxDepth() {
+        BallSortLayout layout = new BallSortLayout("A B E\nB A E");
+        MCTS.State root = new MCTS.State(layout, null, 50.0);
+        MCTS.State child1 = new MCTS.State(layout, root, 50.0);
+
+        child1.expand(50.0, 2);
+
+        assertThat(child1.getChildren()).isNotEmpty();
+    }
 }
