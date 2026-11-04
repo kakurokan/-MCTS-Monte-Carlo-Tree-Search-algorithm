@@ -1,46 +1,73 @@
+import search.Simulator;
+import search.MCTS;
 import org.junit.jupiter.api.Test;
+import puzzles.BallSortLayout;
+import java.util.Random;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
 
 public class MCTSTest {
 
-    private static final double FMAX = 100.0;
-    private static final double CMAX = 50.0;
-    private static final double C = 0.2;
-    private static final int MAX_DEPTH = 10;
-
     @Test
-    public void treeDescentByLevelsInSelection(){
+    public void shouldThrowException_whenFMaxIsLessThanMaxDepthPlusCMax() {
+        Simulator sim = new Simulator(1, 10.0, new Random());
 
+        assertThatThrownBy(() -> new MCTS(10.0, 100, sim, 5.0, 0.2, 5))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("fMax inválido. fMax deve ser maior ou igual à maxDepth + cMax");
     }
 
     @Test
-    public void completedExpansion(){
+    public void shouldCalculateCorrectReward_whenValidCostsAreGiven() {
+        BallSortLayout layout = new BallSortLayout("A B E\nA B E");
+        MCTS.State root = new MCTS.State(layout, null, 50.0);
 
+        root.updateSim(0.0);
+
+        double reward = root.reward(100.0);
+        assertThat(reward).isEqualTo(1.0);
     }
 
     @Test
-    public void unexpandableLeaves(){
+    public void shouldKeepLowestSimCost_whenUpdatingSim() {
+        BallSortLayout layout = new BallSortLayout("A B E\nA B E");
+        MCTS.State state = new MCTS.State(layout, null, 50.0);
 
+        state.updateSim(30.0);
+        assertThat(state.getSim()).isEqualTo(30.0);
+
+        state.updateSim(40.0);
+        assertThat(state.getSim()).isEqualTo(30.0);
+
+        state.updateSim(15.0);
+        assertThat(state.getSim()).isEqualTo(15.0);
     }
 
     @Test
-    public void rewardRangeFormula(){
+    public void shouldStopExpanding_whenMaxDepthIsReached() {
+        BallSortLayout layout = new BallSortLayout("A B E\nB A E");
+        MCTS.State root = new MCTS.State(layout, null, 50.0);
+        MCTS.State child1 = new MCTS.State(layout, root, 50.0);
+        MCTS.State child2 = new MCTS.State(layout, child1, 50.0);
 
+        child2.expand(50.0, 2);
+
+        assertThat(child2.getChildren()).isEmpty();
     }
 
     @Test
-    public void backPropagationWithMinUpdate(){
+    public void shouldUpdateAncestorVisitsAndCosts_whenBackpropagating() {
+        Simulator sim = new Simulator(1, 50.0, new Random());
+        MCTS mcts = new MCTS(50.0, 100, sim, 100.0, 0.2, 10);
 
-    }
+        BallSortLayout layout = new BallSortLayout("A B E\nB A E");
+        MCTS.State root = new MCTS.State(layout, null, 50.0);
+        MCTS.State child = new MCTS.State(layout, root, 50.0);
 
-    @Test
-    public void simulationTruncationAtCMAX(){
+        mcts.backpropagate(child, 10.0);
 
-    }
-
-    @Test
-    public void validSolutionOnSample(){
-
+        assertThat(child.getVisitCount()).isEqualTo(1);
+        assertThat(root.getVisitCount()).isEqualTo(1);
+        assertThat(root.getSim()).isEqualTo(11.0);
     }
 }
