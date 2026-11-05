@@ -107,14 +107,18 @@ public class MCTS {
      * (custo g), ou um rollout bem-sucedido a partir de um filho (custo g + custo do rollout).
      * No segundo caso, o caminho devolvido é o caminho na árvore até ao filho seguido das
      * configurações percorridas pelo rollout ({@link SimResult#getPath()}).
+     * <p>
+     * Antes de ser devolvido, o caminho é limpo de ciclos e reconstruído com estados novos
+     * (encadeados entre si), pelo que estes não pertencem à árvore de pesquisa.
      *
      * @param start A configuração inicial. Não pode ser nula.
      * @param goal  A configuração objetivo. Não pode ser nula.
-     * @return Iterador sobre os estados do melhor caminho encontrado, da raiz até ao objetivo,
-     * ou {@code null} se nenhuma solução tiver sido encontrada.
+     * @return Iterador sobre os estados do melhor caminho encontrado, sem configurações repetidas,
+     * da raiz até ao objetivo, ou {@code null} se nenhuma solução tiver sido encontrada.
      * @pre start != null && goal != null
      * @pos Se o resultado não for nulo, o primeiro estado corresponde a {@code start} e o último satisfaz isGoal(goal).
      * @pos Se o resultado não for nulo, cada estado é sucessor do anterior por um único movimento legal.
+     * @pos Se o resultado não for nulo, não há configurações repetidas no caminho.
      * @pos {@code start} e {@code goal} não são modificadas.
      * @pos Termina antes de maxIterations se a árvore ficar totalmente explorada (raiz esgotada).
      */
