@@ -9,6 +9,11 @@ import java.util.Iterator;
 import java.util.Random;
 import java.util.Scanner;
 
+/**
+ * Ponto de entrada da aplicação. Lê do standard input uma configuração do puzzle
+ * Ball Sort (altura, número de tubos e uma linha por nível) e resolve-a com MCTS,
+ * escrevendo o custo da solução encontrada ou {@code "no solution found"}.
+ */
 public class Main {
 
     private static final double DEFAULT_CMAX = 500;    // era 200
@@ -18,7 +23,18 @@ public class Main {
     private static final int DEFAULT_MAX_DEPTH = 60;     // era 200
     private static final long DEFAULT_SEED = 42;
 
-    // fmax = cMax + maxDepth (mantém-se)
+    /**
+     * Executa o MCTS sobre a configuração lida do standard input.
+     * <p>
+     * Argumentos opcionais, por ordem: {@code cMax}, {@code n} (simulações por iteração),
+     * {@code c} (constante de exploração), {@code iterations}, {@code maxDepth} e {@code seed}.
+     * Os não indicados assumem os valores por omissão. O limite {@code fmax} é {@code cMax + maxDepth}.
+     *
+     * @param args argumentos opcionais da linha de comandos, descritos acima.
+     * @throws IllegalArgumentException se alguma linha da configuração não tiver o número de tubos indicado.
+     * @throws NumberFormatException    se algum argumento não for numérico.
+     * @pre o standard input contém uma configuração válida
+     */
     static void main(String[] args) {
 
         double cMax = args.length > 0 ? Double.parseDouble(args[0]) : DEFAULT_CMAX;

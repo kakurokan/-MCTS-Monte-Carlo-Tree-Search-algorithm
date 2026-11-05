@@ -6,6 +6,10 @@ import java.util.Random;
 
 import static org.assertj.core.api.Assertions.*;
 
+/**
+ * Testes unitários do {@link Simulator}: validação de parâmetros e os possíveis
+ * desfechos de uma simulação (objetivo, corte em Cmax e beco sem saída).
+ */
 public class SimulatorTest {
 
     @Test
