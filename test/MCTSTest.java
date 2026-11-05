@@ -6,6 +6,10 @@ import java.util.Random;
 
 import static org.assertj.core.api.Assertions.*;
 
+/**
+ * Testes unitários do {@link MCTS} e do seu estado interno {@link MCTS.State}:
+ * validação de parâmetros, recompensa, atualização de custos, expansão e retropropagação.
+ */
 public class MCTSTest {
 
     @Test

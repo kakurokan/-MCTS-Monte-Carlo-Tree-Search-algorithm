@@ -4,12 +4,29 @@ import core.Ilayout;
 
 import java.util.*;
 
+/**
+ * Configuração do puzzle Ball Sort: uma lista de tubos (pilhas) de bolas
+ * representadas por caracteres, todos com a mesma capacidade. Um movimento
+ * transfere a bola do topo de um tubo para outro tubo vazio ou cujo topo
+ * tenha a mesma cor. O objetivo é que cada tubo fique vazio ou cheio com uma só cor.
+ *
+ * @inv getK() == 1
+ * @inv nenhum tubo excede maxTubeSize bolas
+ */
 public class BallSortLayout implements Ilayout, Cloneable {
     private final int K;
     private final int maxTubeSize;
     private List<Stack<Character>> tubes;
     private int hash;
 
+    /**
+     * Cria uma configuração a partir da sua representação textual.
+     *
+     * @param configuration uma linha por nível, do topo para a base, com as bolas separadas
+     *                      por espaços; {@code 'E'} representa uma posição vazia.
+     * @pre configuration != null e todas as linhas têm o mesmo número de colunas
+     * @pos o número de tubos é o número de colunas e a capacidade de cada tubo é o número de linhas.
+     */
     public BallSortLayout(String configuration) {
         K = 1;
         hash = 0;
@@ -34,6 +51,12 @@ public class BallSortLayout implements Ilayout, Cloneable {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Um sucessor resulta de mover a bola do topo de um tubo (não vazio e ainda não
+     * resolvido) para outro tubo que não esteja cheio e que esteja vazio ou tenha a mesma cor no topo.
+     */
     @Override
     public List<Ilayout> children() {
         List<Ilayout> children = new ArrayList<>();
@@ -75,6 +98,12 @@ public class BallSortLayout implements Ilayout, Cloneable {
         return children;
     }
 
+    /**
+     * Duas configurações são iguais se tiverem os mesmos tubos com as mesmas bolas pela mesma ordem.
+     *
+     * @param o objeto a comparar.
+     * @return {@code true} se {@code o} for um {@code BallSortLayout} equivalente a este.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -84,6 +113,11 @@ public class BallSortLayout implements Ilayout, Cloneable {
         return Objects.equals(tubes, that.tubes);
     }
 
+    /**
+     * Devolve o hash da configuração, calculado uma única vez e guardado em cache.
+     *
+     * @return o hash consistente com {@link #equals(Object)}.
+     */
     @Override
     public int hashCode() {
         if (hash == 0) {
@@ -92,6 +126,12 @@ public class BallSortLayout implements Ilayout, Cloneable {
         return hash;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Esta configuração é objetivo se todos os tubos estiverem vazios ou cheios com uma só cor;
+     * o parâmetro {@code l} é ignorado.
+     */
     @Override
     public boolean isGoal(Ilayout l) {
         for (Stack<Character> tube : tubes) {
@@ -103,11 +143,22 @@ public class BallSortLayout implements Ilayout, Cloneable {
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return sempre 1.
+     */
     @Override
     public double getK() {
         return K;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Conta as bolas que não pertencem ao maior bloco de cor contínuo assente na base de
+     * algum tubo, para cada cor; o parâmetro {@code goal} é ignorado.
+     */
     @Override
     public double getHeuristic(Ilayout goal) {
         int total = 0;
@@ -139,6 +190,11 @@ public class BallSortLayout implements Ilayout, Cloneable {
         return total - totalColorBlocks;
     }
 
+    /**
+     * Cria uma cópia profunda desta configuração (os tubos são copiados).
+     *
+     * @return uma nova configuração igual a esta e independente dela.
+     */
     @Override
     public BallSortLayout clone() {
         try {
@@ -158,6 +214,12 @@ public class BallSortLayout implements Ilayout, Cloneable {
         }
     }
 
+    /**
+     * Verifica se um tubo está resolvido.
+     *
+     * @param tube o tubo a verificar.
+     * @return {@code true} se o tubo estiver vazio ou cheio com bolas da mesma cor.
+     */
     private boolean isValidTube(Stack<Character> tube) {
         if (tube.isEmpty()) {
             return true;
@@ -177,6 +239,11 @@ public class BallSortLayout implements Ilayout, Cloneable {
         return true;
     }
 
+    /**
+     * Devolve a representação textual no mesmo formato aceite pelo construtor.
+     *
+     * @return uma linha por nível, do topo para a base, com {@code 'E'} nas posições vazias.
+     */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
