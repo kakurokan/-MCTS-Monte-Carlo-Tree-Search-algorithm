@@ -296,7 +296,7 @@ public class MCTS {
         private boolean exhausted = false;
 
         /**
-         * Cria um novo nó da árvore.
+         * Cria um nó da árvore.
          *
          * @param layout A configuração associada a este nó. Não pode ser nula.
          * @param father O nó pai, ou {@code null} se este nó for a raiz.
