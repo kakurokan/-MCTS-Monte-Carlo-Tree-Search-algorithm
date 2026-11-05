@@ -68,6 +68,38 @@ public class MCTS {
     }
 
     /**
+     * Remove ciclos de uma sequência ordenada de configurações, eliminando os estados
+     * entre duas ocorrências da mesma configuração.
+     * <p>
+     * Sempre que uma configuração já presente no caminho limpo volta a aparecer, todos
+     * os elementos posteriores à sua primeira ocorrência mantida são removidos. A
+     * configuração repetida não é adicionada novamente.
+     *
+     * @param ilayouts A sequência de configurações a limpar. Não pode ser nula.
+     * @return Uma nova lista com os ciclos removidos, preservando a ordem dos elementos
+     * restantes.
+     * @pre ilayouts != null
+     */
+    private static List<Ilayout> removeCyles(List<Ilayout> ilayouts) {
+        List<Ilayout> clean = new ArrayList<>();
+        Map<Ilayout, Integer> pos = new HashMap<>();
+
+        for (Ilayout l : ilayouts) {
+            Integer p = pos.get(l);
+            if (p != null) {
+                for (int k = clean.size() - 1; k > p; k--) {
+                    pos.remove(clean.remove(k));
+                }
+            } else {
+                clean.add(l);
+                pos.put(l, clean.size() - 1);
+            }
+        }
+
+        return clean;
+    }
+
+    /**
      * Executa o MCTS a partir da configuração inicial, procurando o caminho de menor custo
      * até à configuração objetivo encontrado durante as iterações.
      * <p>
@@ -146,7 +178,21 @@ public class MCTS {
             atual = atual.getFather();
         }
 
-        return path.iterator();
+        List<Ilayout> ilayouts = new ArrayList<>();
+        for (State s : path) {
+            ilayouts.add(s.layout);
+        }
+        ilayouts = removeCyles(ilayouts);
+
+        List<State> finalPath = new ArrayList<>();
+        State prev = null;
+        for (Ilayout l : ilayouts) {
+            State s = new State(l, prev, cMax);
+            finalPath.add(s);
+            prev = s;
+        }
+
+        return finalPath.iterator();
     }
 
     /**
