@@ -11,16 +11,16 @@ import java.util.*;
  * <p>
  * Cada rollout termina numa de três situações:
  * <ul>
- *   <li>chega à configuração objetivo;</li>
- *   <li>fica sem movimentos válidos (beco sem saída);</li>
- *   <li>o próximo movimento faria o custo acumulado ultrapassar Cmax.</li>
+ *   <li>Chega à configuração objetivo;</li>
+ *   <li>Fica sem movimentos válidos (beco);</li>
+ *   <li>O próximo movimento faria o custo acumulado ultrapassar Cmax.</li>
  * </ul>
  * Nos dois últimos casos, o rollout vale Cmax.
  * <p>
  * Os rollouts nunca desfazem o movimento imediatamente anterior. Se voltarem a uma
  * configuração já visitada, o ciclo é eliminado do caminho, e o custo devolvido é o
  * do caminho sem ciclos. A truncagem em Cmax conta todos os movimentos aplicados,
- * incluindo os que foram eliminados em ciclos, o que garante que cada rollout termina.
+ * incluindo quais foram eliminados em ciclos, o que garante que cada rollout termina.
  *
  * @inv n >= 1
  * @inv cMax > 0
@@ -84,7 +84,7 @@ public class Simulator {
      * desfazer o movimento anterior, até chegar ao objetivo, ficar sem movimentos
      * ou o próximo movimento fazer o custo acumulado ultrapassar cMax.
      * <p>
-     * Ao longo do rollout é mantido o caminho sem ciclos, juntamente com a posição
+     * Ao longo do rollout é mantido o caminho sem ciclos, com a posição
      * de cada configuração nesse caminho. Quando o rollout chega a uma configuração
      * que já está no caminho, todas as configurações posteriores a ela são removidas.
      * O custo devolvido é a soma dos custos do caminho resultante.
@@ -123,8 +123,8 @@ public class Simulator {
             if (r < 0) {
                 return new SimResult(null, cMax);
             }
-            if(spent + succ.get(r).getK()  > cMax){
-                return new SimResult(null,cMax);
+            if (spent + succ.get(r).getK() > cMax) {
+                return new SimResult(null, cMax);
             }
             previous = current;
             current = succ.get(r);
@@ -146,7 +146,7 @@ public class Simulator {
      * Sorteia o índice de um sucessor, uniformemente entre os que não desfazem o
      * movimento anterior. Começa por sortear entre todos os sucessores. Se calhar a
      * configuração anterior, sorteia outro entre os restantes, com a mesma
-     * probabilidade para todos. Assim, só é preciso uma comparação com
+     * probabilidade para todos. Assim, só é precisa uma comparação com
      * {@code equals}, em vez de uma por sucessor.
      *
      * @param succ     Sucessores da configuração atual. Não pode ser nula.

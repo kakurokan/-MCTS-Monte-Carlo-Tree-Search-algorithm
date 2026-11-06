@@ -68,6 +68,38 @@ public class MCTS {
     }
 
     /**
+     * Remove ciclos de uma sequência ordenada de configurações, eliminando os estados
+     * entre duas ocorrências da mesma configuração.
+     * <p>
+     * Sempre que uma configuração já presente no caminho limpo volta a aparecer, todos
+     * os elementos posteriores à sua primeira ocorrência mantida são removidos. A
+     * configuração repetida não é adicionada novamente.
+     *
+     * @param ilayouts A sequência de configurações a limpar. Não pode ser nula.
+     * @return Uma nova lista com os ciclos removidos, preservando a ordem dos elementos
+     * restantes.
+     * @pre ilayouts != null
+     */
+    private static List<Ilayout> removeCyles(List<Ilayout> ilayouts) {
+        List<Ilayout> clean = new ArrayList<>();
+        Map<Ilayout, Integer> pos = new HashMap<>();
+
+        for (Ilayout l : ilayouts) {
+            Integer p = pos.get(l);
+            if (p != null) {
+                for (int k = clean.size() - 1; k > p; k--) {
+                    pos.remove(clean.remove(k));
+                }
+            } else {
+                clean.add(l);
+                pos.put(l, clean.size() - 1);
+            }
+        }
+
+        return clean;
+    }
+
+    /**
      * Executa o MCTS a partir da configuração inicial, procurando o caminho de menor custo
      * até à configuração objetivo encontrado durante as iterações.
      * <p>
@@ -75,14 +107,18 @@ public class MCTS {
      * (custo g), ou um rollout bem-sucedido a partir de um filho (custo g + custo do rollout).
      * No segundo caso, o caminho devolvido é o caminho na árvore até ao filho seguido das
      * configurações percorridas pelo rollout ({@link SimResult#getPath()}).
+     * <p>
+     * Antes de ser devolvido, o caminho é limpo de ciclos e reconstruído com estados novos
+     * (encadeados entre si), pelo que estes não pertencem à árvore de pesquisa.
      *
      * @param start A configuração inicial. Não pode ser nula.
      * @param goal  A configuração objetivo. Não pode ser nula.
-     * @return Iterador sobre os estados do melhor caminho encontrado, da raiz até ao objetivo,
-     * ou {@code null} se nenhuma solução tiver sido encontrada.
+     * @return Iterador sobre os estados do melhor caminho encontrado, sem configurações repetidas,
+     * da raiz até ao objetivo, ou {@code null} se nenhuma solução tiver sido encontrada.
      * @pre start != null && goal != null
      * @pos Se o resultado não for nulo, o primeiro estado corresponde a {@code start} e o último satisfaz isGoal(goal).
      * @pos Se o resultado não for nulo, cada estado é sucessor do anterior por um único movimento legal.
+     * @pos Se o resultado não for nulo, não há configurações repetidas no caminho.
      * @pos {@code start} e {@code goal} não são modificadas.
      * @pos Termina antes de maxIterations se a árvore ficar totalmente explorada (raiz esgotada).
      */
@@ -146,7 +182,21 @@ public class MCTS {
             atual = atual.getFather();
         }
 
-        return path.iterator();
+        List<Ilayout> ilayouts = new ArrayList<>();
+        for (State s : path) {
+            ilayouts.add(s.layout);
+        }
+        ilayouts = removeCyles(ilayouts);
+
+        List<State> finalPath = new ArrayList<>();
+        State prev = null;
+        for (Ilayout l : ilayouts) {
+            State s = new State(l, prev, cMax);
+            finalPath.add(s);
+            prev = s;
+        }
+
+        return finalPath.iterator();
     }
 
     /**
@@ -246,7 +296,7 @@ public class MCTS {
         private boolean exhausted = false;
 
         /**
-         * Cria um novo nó da árvore.
+         * Cria um nó da árvore.
          *
          * @param layout A configuração associada a este nó. Não pode ser nula.
          * @param father O nó pai, ou {@code null} se este nó for a raiz.
