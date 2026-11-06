@@ -6,7 +6,7 @@ import java.util.*;
 
 /**
  * Implementa a fase de simulação do MCTS. A partir de uma configuração, faz N
- * simulações (rollouts) com movimentos aleatórios e devolve a de menor custo,
+ * simulações (rollouts) com movimentos escolhidos por uma política e-greedy e devolve a de menor custo,
  * que corresponde a sim(i).
  * <p>
  * Cada rollout termina numa de três situações:
@@ -30,9 +30,10 @@ public class Simulator {
     private final int n;
     private final double cMax;
     private final Random rnd;
+    private final double epsilon;
 
     /**
-     * Cria um simulador com os parâmetros indicados.
+     * Cria um simulador com rollouts totalmente aleatórios (equivale a epsilon = 1).
      *
      * @param n    Número de rollouts feitos em cada chamada a {@link #simulate}.
      * @param cMax Custo máximo de um rollout. Um rollout cujo próximo movimento faria
@@ -44,11 +45,30 @@ public class Simulator {
      * @pos Os parâmetros ficam fixos durante toda a vida do simulador.
      */
     public Simulator(int n, double cMax, Random rnd) {
+        this(n, cMax, rnd, 1.0);
+    }
+
+    /**
+     * Cria um simulador com rollouts ε-greedy guiados pela heurística: em cada passo,
+     * com probabilidade {@code epsilon} faz um movimento aleatório; caso contrário escolhe
+     * o sucessor com menor {@link Ilayout#getHeuristic} (empates desfeitos ao acaso).
+     *
+     * @param n       Número de rollouts feitos em cada chamada a {@link #simulate}.
+     * @param cMax    Custo máximo de um rollout.
+     * @param rnd     Gerador de números aleatórios. Não pode ser nulo.
+     * @param epsilon Probabilidade de um passo ser aleatório, em [0, 1]. Com 1, os
+     *                rollouts são totalmente aleatórios.
+     * @throws IllegalArgumentException se n &lt; 1, cMax &lt;= 0 ou epsilon fora de [0, 1].
+     * @pre rnd != null
+     */
+    public Simulator(int n, double cMax, Random rnd, double epsilon) {
         if (n <= 0) throw new IllegalArgumentException("n tem de ser n >=1");
         if (cMax <= 0) throw new IllegalArgumentException("cMax tem de ser n > 0");
+        if (epsilon < 0 || epsilon > 1) throw new IllegalArgumentException("epsilon tem de estar em [0, 1]");
         this.n = n;
         this.cMax = cMax;
         this.rnd = rnd;
+        this.epsilon = epsilon;
     }
 
     /**
@@ -80,19 +100,21 @@ public class Simulator {
     }
 
     /**
-     * Faz um único rollout: aplica movimentos aleatórios a partir de start, sem
+     * Faz um único rollout: aplica movimentos a partir de start, sem
      * desfazer o movimento anterior, até chegar ao objetivo, ficar sem movimentos
      * ou o próximo movimento fazer o custo acumulado ultrapassar cMax.
      * <p>
-     * Ao longo do rollout é mantido o caminho sem ciclos, com a posição
-     * de cada configuração nesse caminho. Quando o rollout chega a uma configuração
-     * que já está no caminho, todas as configurações posteriores a ela são removidas.
-     * O custo devolvido é a soma dos custos do caminho resultante.
+     * Em cada passo, o sucessor é obtido pela política epsilon-greedy, que opta por um estado aleatório
+     * usando {@link Ilayout#randomChild} ou pelo estado de menor heurística. Ao longo do rollout
+     * é mantido o caminho sem ciclos, juntamente com a posição de cada configuração nesse caminho.
+     * Quando o rollout chega a uma configuração que já está no caminho, todas as configurações
+     * posteriores a ela são removidas. O custo devolvido é a soma dos custos do
+     * caminho resultante.
      *
      * @param start A configuração onde começa o rollout. Não pode ser nula.
      * @param goal  A configuração objetivo. Não pode ser nula.
-     * @return O custo e o caminho até ao objetivo, se o rollout o alcançou;
-     * custo cMax e caminho nulo caso contrário.
+     * @return O custo e o caminho sem ciclos até ao objetivo (sem incluir start), se o
+     *         rollout o alcançou; custo cMax e caminho nulo caso contrário.
      * @pre start != null
      * @pre goal != null
      * @pos O resultado nunca é nulo.
@@ -101,12 +123,12 @@ public class Simulator {
      * @pos As configurações start e goal não são modificadas.
      */
     private SimResult rollout(Ilayout start, Ilayout goal) {
-        List<Ilayout> path = new ArrayList<>();
-        Map<Ilayout, Integer> position = new HashMap<>();
+        List<Ilayout> path = new ArrayList<>();            // caminho sem ciclos (sem incluir start)
+        Map<Ilayout, Integer> position = new HashMap<>();  // configuração -> posição no caminho (start = 0)
+        position.put(start, 0);
         Ilayout current = start;
-        position.put(current, 0);
         Ilayout previous = null;
-        double spent = 0;
+        double spent = 0;  // custo de todos os movimentos aplicados, usado na truncagem em Cmax
 
         while (true) {
             if (current.isGoal(goal)) {
@@ -114,24 +136,22 @@ public class Simulator {
                 for (Ilayout l : path) cost += l.getK();
                 return new SimResult(path, cost);
             }
-            if (spent >= cMax) {
-                return new SimResult(null, cMax);
+
+            Ilayout next = nextMove(current, previous, goal, position);
+            if (next == null) {
+                return new SimResult(null, cMax);           // beco sem saída
+            }
+            if (spent + next.getK() > cMax) {
+                return new SimResult(null, cMax);           // o próximo movimento ultrapassaria Cmax
             }
 
-            List<Ilayout> succ = current.children();
-            int r = this.chooseMovement(succ, previous);
-            if (r < 0) {
-                return new SimResult(null, cMax);
-            }
-            if (spent + succ.get(r).getK() > cMax) {
-                return new SimResult(null, cMax);
-            }
             previous = current;
-            current = succ.get(r);
+            current = next;
             spent += current.getK();
 
             Integer p = position.get(current);
             if (p != null) {
+                // voltou a uma configuração já visitada: o ciclo é eliminado do caminho
                 for (int k = path.size() - 1; k >= p; k--) {
                     position.remove(path.remove(k));
                 }
@@ -152,10 +172,9 @@ public class Simulator {
      * @param succ     Sucessores da configuração atual. Não pode ser nula.
      * @param previous Configuração anterior, ou {@code null} no primeiro passo.
      * @return Índice do sucessor escolhido, ou -1 se não houver nenhum válido
-     * (lista vazia ou o único sucessor é a configuração anterior).
+     *         (lista vazia ou o único sucessor é a configuração anterior).
      * @pos succ não é modificada.
      */
-
     private int chooseMovement(List<Ilayout> succ, Ilayout previous) {
         if (succ.isEmpty()) {
             return -1;
@@ -167,9 +186,43 @@ public class Simulator {
             if (succ.size() == 1) return -1;
             int other = rnd.nextInt(succ.size() - 1);
             r = (other >= r) ? other + 1 : other;
-
         }
         return r;
     }
 
+    /**
+     * Escolhe o próximo movimento do rollout de acordo com a política epsilon-greedy.
+     * Com probabilidade epsilon, sorteia um sucessor com randomChild (fase de exploração).
+     * Caso contrário, escolhe o sucessor de menor heurística que ainda não esteja no caminho
+     * (fase de explotação), com empates desfeitos ao acaso. Se todos os sucessores avaliados
+     * já estiverem no caminho, reverte para um passo aleatório.
+     *
+     * @param current Configuração atual no rollout.
+     * @param previous Configuração anterior, para prevenir ping-pong.
+     * @param goal A configuração objetivo.
+     * @param visited Mapa com as configurações já visitadas no caminho atual e as respetivas posições.
+     * @return O sucessor escolhido, ou null se for um beco sem saída.
+     */
+    private Ilayout nextMove(Ilayout current, Ilayout previous, Ilayout goal,
+                             Map<Ilayout, Integer> visited) {
+        if (epsilon >= 1 || rnd.nextDouble() < epsilon) {
+            return current.randomChild(rnd, previous);          // exploração
+        }
+
+        Ilayout best = null;
+        double bestH = Double.POSITIVE_INFINITY;
+        int ties = 0;
+        for (Ilayout child : current.children()) {               // aproveitamento
+            if (visited.containsKey(child)) continue;            // evita ciclos (inclui previous)
+            double h = child.getHeuristic(goal);
+            if (h < bestH) {
+                bestH = h;
+                best = child;
+                ties = 1;
+            } else if (h == bestH && rnd.nextInt(++ties) == 0) {
+                best = child;                                    // empate escolhido uniformemente
+            }
+        }
+        return best != null ? best : current.randomChild(rnd, previous);
+    }
 }

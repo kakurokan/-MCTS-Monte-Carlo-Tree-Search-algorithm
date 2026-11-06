@@ -22,12 +22,14 @@ public class Main {
     private static final int DEFAULT_ITERATIONS = 15000; // era 5000
     private static final int DEFAULT_MAX_DEPTH = 60;     // era 200
     private static final long DEFAULT_SEED = 42;
+    private static final double DEFAULT_EPSILON = 0.1;
 
     /**
      * Executa o MCTS sobre a configuração lida do standard input.
      * <p>
      * Argumentos opcionais, por ordem: {@code cMax}, {@code n} (simulações por iteração),
-     * {@code c} (constante de exploração), {@code iterations}, {@code maxDepth} e {@code seed}.
+     * {@code c} (constante de exploração), {@code iterations}, {@code maxDepth},
+     * {@code seed} e {@code epsilon} (probabilidade de exploração no rollout epsilon-greedy).
      * Os não indicados assumem os valores por omissão. O limite {@code fmax} é {@code cMax + maxDepth}.
      *
      * @param args argumentos opcionais da linha de comandos, descritos acima.
@@ -35,7 +37,7 @@ public class Main {
      * @throws NumberFormatException    se algum argumento não for numérico.
      * @pre o standard input contém uma configuração válida
      */
-    static void main(String[] args) {
+    public static void main(String[] args) {
 
         double cMax = args.length > 0 ? Double.parseDouble(args[0]) : DEFAULT_CMAX;
         int n = args.length > 1 ? Integer.parseInt(args[1]) : DEFAULT_N;
@@ -43,13 +45,17 @@ public class Main {
         int iterations = args.length > 3 ? Integer.parseInt(args[3]) : DEFAULT_ITERATIONS;
         int maxDepth = args.length > 4 ? Integer.parseInt(args[4]) : DEFAULT_MAX_DEPTH;
         long seed = args.length > 5 ? Long.parseLong(args[5]) : DEFAULT_SEED;
+        double epsilon = args.length > 6 ? Double.parseDouble(args[6]) : DEFAULT_EPSILON;
+
         double fmax = cMax + maxDepth;
         Random random = new Random(seed);
-        Simulator sim = new Simulator(n, cMax, random);
+        Simulator sim = new Simulator(n, cMax, random, epsilon);
         Scanner sc = new Scanner(System.in);
+
         int height = sc.nextInt();
         int tubes = sc.nextInt();
         sc.nextLine();
+
         StringBuilder configuration = new StringBuilder();
         for (int row = 0; row < height; row++) {
             String line = sc.nextLine();
@@ -60,15 +66,15 @@ public class Main {
 
         Ilayout start = new BallSortLayout(configuration.toString());
 
-
         MCTS s = new MCTS(cMax, iterations, sim, fmax, c, maxDepth);
-        Iterator<MCTS.State> it =
-                s.solve(start, null);
+        Iterator<MCTS.State> it = s.solve(start, null);
+
         if (it == null) System.out.println("no solution found");
         else while (it.hasNext()) {
             MCTS.State i = it.next();
             if (!it.hasNext()) System.out.println((int) i.getG());
         }
+
         sc.close();
     }
 }
