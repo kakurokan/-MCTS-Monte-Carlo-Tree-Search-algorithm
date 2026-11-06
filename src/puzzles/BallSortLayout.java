@@ -62,36 +62,10 @@ public class BallSortLayout implements Ilayout, Cloneable {
         List<Ilayout> children = new ArrayList<>();
 
         for (int i = 0; i < tubes.size(); i++) {
-            Stack<Character> sourceTube = tubes.get(i);
-
-            if (sourceTube.isEmpty()) {
-                continue;
-            }
-
-            if (isValidTube(sourceTube)) {
-                continue;
-            }
-
-            char ball = sourceTube.peek();
-
-            for (int j = 0; j < this.tubes.size(); j++) {
-                if (i == j) {
-                    continue;
+            for (int j = 0; j < tubes.size(); j++) {
+                if (isValidMove(i, j)) {
+                    children.add(applyMove(i, j));
                 }
-
-                Stack<Character> currentDestTube = this.tubes.get(j);
-
-                if (currentDestTube.size() == maxTubeSize) {
-                    continue;
-                }
-                if (!currentDestTube.isEmpty() && currentDestTube.peek() != ball) {
-                    continue;
-                }
-
-                BallSortLayout child = this.clone();
-                child.tubes.get(i).pop();
-                child.tubes.get(j).push(ball);
-                children.add(child);
             }
         }
 
@@ -272,7 +246,7 @@ public class BallSortLayout implements Ilayout, Cloneable {
      * Verifica se é possível mover a bola do topo do tubo de origem para o tubo de destino.
      *
      * @param from índice do tubo de origem
-     * @param to índice do tubo de destino
+     * @param to   índice do tubo de destino
      * @return {@code true} se o movimento for válido segundo as regras do jogo, caso contrário {@code false}.
      */
     private boolean isValidMove(int from, int to) {
@@ -290,7 +264,7 @@ public class BallSortLayout implements Ilayout, Cloneable {
      * Aplica um movimento criando uma nova configuração resultante da transferência da bola.
      *
      * @param from índice do tubo de origem
-     * @param to índice do tubo de destino
+     * @param to   índice do tubo de destino
      * @return uma nova instância de {@code BallSortLayout} refletindo o estado após o movimento.
      */
     private BallSortLayout applyMove(int from, int to) {
@@ -305,7 +279,7 @@ public class BallSortLayout implements Ilayout, Cloneable {
      * Tenta sortear cegamente até um máximo de tentativas para maior rapidez;
      * se falhar, recorre à enumeração exaustiva.
      *
-     * @param rnd gerador de números aleatórios
+     * @param rnd   gerador de números aleatórios
      * @param avoid estado anterior (pai) a tentar evitar para prevenir ciclos de tamanho 2 (ping-pong)
      * @return um estado filho válido, ou {@code null} se não existirem jogadas possíveis.
      */
@@ -323,7 +297,7 @@ public class BallSortLayout implements Ilayout, Cloneable {
                 continue;
             }
             BallSortLayout child = applyMove(from, to);
-            if (avoid != null && child.equals(avoid)) {
+            if (child.equals(avoid)) {
                 continue;
             }
             return child;
@@ -335,7 +309,7 @@ public class BallSortLayout implements Ilayout, Cloneable {
      * Sorteia uma jogada válida através da enumeração de todas as transições possíveis.
      * Utilizado como alternativa de *fallback* quando a seleção cega falha repetidamente.
      *
-     * @param rnd gerador de números aleatórios
+     * @param rnd   gerador de números aleatórios
      * @param avoid estado a evitar (geralmente o estado de onde esta configuração derivou)
      * @return um estado filho aleatório válido, ou {@code null} se for um beco sem saída.
      */
@@ -358,7 +332,7 @@ public class BallSortLayout implements Ilayout, Cloneable {
         int r = rnd.nextInt(count);
         BallSortLayout child = applyMove(moves[r] / n, moves[r] % n);
 
-        if (avoid != null && child.equals(avoid)) {
+        if (child.equals(avoid)) {
             if (count == 1) {
                 return null;
             }
