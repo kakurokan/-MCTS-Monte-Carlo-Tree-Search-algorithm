@@ -1,74 +1,144 @@
-import org.junit.jupiter.api.Test;
-import puzzles.BallSortLayout;
 import search.Simulator;
 import search.SimResult;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import puzzles.BallSortLayout;
+
 import java.util.Random;
 
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Testes unitários do {@link Simulator}: validação de parâmetros e os possíveis
- * desfechos de uma simulação (objetivo, corte em Cmax e beco sem saída).
+ * Testes unitários do {@link Simulator}: validação de parâmetros de instanciação
+ * e desfechos de simulação (objetivo, limite cMax, beco sem saída e política epsilon-greedy).
  */
 public class SimulatorTest {
 
-    @Test
-    public void shouldThrowException_whenInstantiatingWithInvalidParameters() {
-        Random rnd = new Random();
+    @Nested
+    class InstantiationTests {
 
-        assertThatThrownBy(() -> new Simulator(0, 50.0, rnd))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("n tem de ser n >=1");
+        @Test
+        public void shouldThrowException_whenNIsInvalid() {
+            Random rnd = new Random();
 
-        assertThatThrownBy(() -> new Simulator(10, -5.0, rnd))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("cMax tem de ser n > 0");
+            assertThatThrownBy(() -> new Simulator(0, 50.0, rnd))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("n tem de ser n >=1");
+
+            assertThatThrownBy(() -> new Simulator(-5, 50.0, rnd))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("n tem de ser n >=1");
+        }
+
+        @Test
+        public void shouldThrowException_whenCMaxIsInvalid() {
+            Random rnd = new Random();
+
+            assertThatThrownBy(() -> new Simulator(10, 0.0, rnd))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("cMax tem de ser n > 0");
+
+            assertThatThrownBy(() -> new Simulator(10, -10.0, rnd))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("cMax tem de ser n > 0");
+        }
+
+        @Test
+        public void shouldThrowException_whenEpsilonIsOutOfRange() {
+            Random rnd = new Random();
+
+            assertThatThrownBy(() -> new Simulator(10, 50.0, rnd, -0.1))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("epsilon tem de estar em [0, 1]");
+
+            assertThatThrownBy(() -> new Simulator(10, 50.0, rnd, 1.05))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("epsilon tem de estar em [0, 1]");
+        }
+
+        @Test
+        public void shouldThrowException_whenEpsilonIsNaN() {
+            Random rnd = new Random();
+
+            assertThatThrownBy(() -> new Simulator(10, 50.0, rnd, Double.NaN))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("epsilon não pode ser NaN");
+        }
+
+        @Test
+        public void shouldInstantiateSuccessfully_whenEpsilonIsAtBoundaries() {
+            Random rnd = new Random();
+
+            assertThatCode(() -> new Simulator(5, 50.0, rnd, 0.0))
+                    .doesNotThrowAnyException();
+
+            assertThatCode(() -> new Simulator(5, 50.0, rnd, 1.0))
+                    .doesNotThrowAnyException();
+        }
     }
 
-    @Test
-    public void shouldReturnZeroCostAndEmptyPath_whenStartIsGoal() {
-        Simulator simulator = new Simulator(5, 50.0, new Random());
-        BallSortLayout goalLayout = new BallSortLayout("A B E\nA B E");
+    @Nested
+    class RolloutBehaviorTests {
 
-        SimResult result = simulator.simulate(goalLayout, goalLayout);
+        @Test
+        public void shouldReturnZeroCostAndEmptyPath_whenStartIsGoal() {
+            Simulator simulator = new Simulator(5, 50.0, new Random());
+            BallSortLayout goalLayout = new BallSortLayout("A B E\nA B E");
 
-        assertThat(result.isSolved()).isTrue();
-        assertThat(result.getCost()).isEqualTo(0.0);
-        assertThat(result.getPath()).isEmpty();
-    }
+            SimResult result = simulator.simulate(goalLayout, goalLayout);
 
-    @Test
-    public void shouldReturnCMaxAndNullPath_whenSimulationReachesMaxCostWithoutSolving() {
-        Simulator simulator = new Simulator(1, 2.0, new Random(42));
-        BallSortLayout startLayout = new BallSortLayout("A B E E\nB A E E");
-        BallSortLayout goalLayout = new BallSortLayout("A B E E\nA B E E");
+            assertThat(result.isSolved()).isTrue();
+            assertThat(result.getCost()).isEqualTo(0.0);
+            assertThat(result.getPath()).isEmpty();
+        }
 
-        SimResult result = simulator.simulate(startLayout, goalLayout);
+        @Test
+        public void shouldReturnCMaxAndNullPath_whenSimulationReachesMaxCostWithoutSolving() {
+            Simulator simulator = new Simulator(1, 2.0, new Random(42));
+            BallSortLayout startLayout = new BallSortLayout("A B E E\nB A E E");
+            BallSortLayout goalLayout = new BallSortLayout("A B E E\nA B E E");
 
-        assertThat(result.isSolved()).isFalse();
-        assertThat(result.getCost()).isEqualTo(2.0);
-        assertThat(result.getPath()).isNull();
-    }
+            SimResult result = simulator.simulate(startLayout, goalLayout);
 
-    @Test
-    public void shouldReturnCMaxAndNullPath_whenStuckInDeadEnd() {
-        Simulator simulator = new Simulator(1, 50.0, new Random());
-        BallSortLayout deadEndLayout = new BallSortLayout("A B \nB A");
-        BallSortLayout goalLayout = new BallSortLayout("A B E\nA B E");
+            assertThat(result.isSolved()).isFalse();
+            assertThat(result.getCost()).isEqualTo(2.0);
+            assertThat(result.getPath()).isNull();
+        }
 
-        SimResult result = simulator.simulate(deadEndLayout, goalLayout);
+        @Test
+        public void shouldReturnCMaxAndNullPath_whenStuckInDeadEnd() {
+            Simulator simulator = new Simulator(1, 50.0, new Random());
+            BallSortLayout deadEndLayout = new BallSortLayout("A B\nB A");
+            BallSortLayout goalLayout = new BallSortLayout("A B E\nA B E");
 
-        assertThat(result.isSolved()).isFalse();
-        assertThat(result.getCost()).isEqualTo(50.0);
-        assertThat(result.getPath()).isNull();
-    }
+            SimResult result = simulator.simulate(deadEndLayout, goalLayout);
 
-    @Test
-    public void shouldThrowNullPointerException_whenRandomIsNull() {
-        Simulator simulator = new Simulator(1, 10.0, null);
-        BallSortLayout layout = new BallSortLayout("A B E\nB A E");
+            assertThat(result.isSolved()).isFalse();
+            assertThat(result.getCost()).isEqualTo(50.0);
+            assertThat(result.getPath()).isNull();
+        }
 
-        assertThatThrownBy(() -> simulator.simulate(layout, layout))
-                .isInstanceOf(NullPointerException.class);
+        @Test
+        public void shouldSolveSuccessfully_whenUsingPureGreedyPolicy() {
+            // epsilon = 0.0 força o simulador a seguir o nó com a menor heurística em cada passo
+            Simulator simulator = new Simulator(1, 50.0, new Random(42), 0.0);
+            BallSortLayout startLayout = new BallSortLayout("A B E\nB A E");
+            BallSortLayout goalLayout = new BallSortLayout("A B E\nA B E");
+
+            SimResult result = simulator.simulate(startLayout, goalLayout);
+
+            assertThat(result.isSolved()).isTrue();
+            assertThat(result.getCost()).isLessThan(50.0);
+            assertThat(result.getPath()).isNotNull().isNotEmpty();
+        }
+
+        @Test
+        public void shouldThrowNullPointerException_whenRandomIsNull() {
+            Simulator simulator = new Simulator(1, 10.0, null);
+            BallSortLayout layout = new BallSortLayout("A B E\nB A E");
+
+            assertThatThrownBy(() -> simulator.simulate(layout, layout))
+                    .isInstanceOf(NullPointerException.class);
+        }
     }
 }
