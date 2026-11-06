@@ -62,36 +62,10 @@ public class BallSortLayout implements Ilayout, Cloneable {
         List<Ilayout> children = new ArrayList<>();
 
         for (int i = 0; i < tubes.size(); i++) {
-            Stack<Character> sourceTube = tubes.get(i);
-
-            if (sourceTube.isEmpty()) {
-                continue;
-            }
-
-            if (isValidTube(sourceTube)) {
-                continue;
-            }
-
-            char ball = sourceTube.peek();
-
-            for (int j = 0; j < this.tubes.size(); j++) {
-                if (i == j) {
-                    continue;
+            for (int j = 0; j < tubes.size(); j++) {
+                if (isValidMove(i, j)) {
+                    children.add(applyMove(i, j));
                 }
-
-                Stack<Character> currentDestTube = this.tubes.get(j);
-
-                if (currentDestTube.size() == maxTubeSize) {
-                    continue;
-                }
-                if (!currentDestTube.isEmpty() && currentDestTube.peek() != ball) {
-                    continue;
-                }
-
-                BallSortLayout child = this.clone();
-                child.tubes.get(i).pop();
-                child.tubes.get(j).push(ball);
-                children.add(child);
             }
         }
 
@@ -266,5 +240,106 @@ public class BallSortLayout implements Ilayout, Cloneable {
         }
 
         return sb.toString();
+    }
+
+    /**
+     * Verifica se é possível mover a bola do topo do tubo de origem para o tubo de destino.
+     *
+     * @param from índice do tubo de origem
+     * @param to   índice do tubo de destino
+     * @return {@code true} se o movimento for válido segundo as regras do jogo, caso contrário {@code false}.
+     */
+    private boolean isValidMove(int from, int to) {
+        if (to == from) return false;
+        Stack<Character> src = tubes.get(from);
+        if (isValidTube(src)) return false;
+        if (src.isEmpty()) return false;
+        Stack<Character> dst = tubes.get(to);
+        if (dst.size() == maxTubeSize) return false;
+        char ball = src.peek();
+        return dst.isEmpty() || dst.peek() == ball;
+    }
+
+    /**
+     * Aplica um movimento criando uma nova configuração resultante da transferência da bola.
+     *
+     * @param from índice do tubo de origem
+     * @param to   índice do tubo de destino
+     * @return uma nova instância de {@code BallSortLayout} refletindo o estado após o movimento.
+     */
+    private BallSortLayout applyMove(int from, int to) {
+        BallSortLayout child = clone();
+        char ball = child.tubes.get(from).pop();
+        child.tubes.get(to).push(ball);
+        return child;
+    }
+
+    /**
+     * Sorteia uma jogada válida aleatória otimizada, evitando gerar todos os vizinhos.
+     * Tenta sortear cegamente até um máximo de tentativas para maior rapidez;
+     * se falhar, recorre à enumeração exaustiva.
+     *
+     * @param rnd   gerador de números aleatórios
+     * @param avoid estado anterior (pai) a tentar evitar para prevenir ciclos de tamanho 2 (ping-pong)
+     * @return um estado filho válido, ou {@code null} se não existirem jogadas possíveis.
+     */
+    @Override
+    public Ilayout randomChild(Random rnd, Ilayout avoid) {
+        int n = tubes.size();
+        if (n < 2) return null;
+        int maxAttempts = 2 * n * (n - 1);
+
+        for (int i = 0; i < maxAttempts; i++) {
+            int from = rnd.nextInt(n);
+            int to = rnd.nextInt(n - 1);
+            if (to >= from) to++;
+            if (!isValidMove(from, to)) {
+                continue;
+            }
+            BallSortLayout child = applyMove(from, to);
+            if (child.equals(avoid)) {
+                continue;
+            }
+            return child;
+        }
+        return randomChildByEnumeration(rnd, avoid);
+    }
+
+    /**
+     * Sorteia uma jogada válida através da enumeração de todas as transições possíveis.
+     * Utilizado como alternativa de *fallback* quando a seleção cega falha repetidamente.
+     *
+     * @param rnd   gerador de números aleatórios
+     * @param avoid estado a evitar (geralmente o estado de onde esta configuração derivou)
+     * @return um estado filho aleatório válido, ou {@code null} se for um beco sem saída.
+     */
+    private Ilayout randomChildByEnumeration(Random rnd, Ilayout avoid) {
+        int n = tubes.size();
+        int[] moves = new int[n * (n - 1)];
+        int count = 0;
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                if (isValidMove(i, j)) {
+                    moves[count++] = i * n + j;
+                }
+            }
+        }
+        if (count == 0) {
+            return null;
+        }
+
+        int r = rnd.nextInt(count);
+        BallSortLayout child = applyMove(moves[r] / n, moves[r] % n);
+
+        if (child.equals(avoid)) {
+            if (count == 1) {
+                return null;
+            }
+            int other = rnd.nextInt(count - 1);
+            r = (other >= r) ? other + 1 : other;
+            child = applyMove(moves[r] / n, moves[r] % n);
+        }
+        return child;
     }
 }
