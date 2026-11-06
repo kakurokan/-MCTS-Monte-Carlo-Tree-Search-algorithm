@@ -163,34 +163,6 @@ public class Simulator {
     }
 
     /**
-     * Sorteia o índice de um sucessor, uniformemente entre os que não desfazem o
-     * movimento anterior. Começa por sortear entre todos os sucessores. Se calhar a
-     * configuração anterior, sorteia outro entre os restantes, com a mesma
-     * probabilidade para todos. Assim, só é precisa uma comparação com
-     * {@code equals}, em vez de uma por sucessor.
-     *
-     * @param succ     Sucessores da configuração atual. Não pode ser nula.
-     * @param previous Configuração anterior, ou {@code null} no primeiro passo.
-     * @return Índice do sucessor escolhido, ou -1 se não houver nenhum válido
-     *         (lista vazia ou o único sucessor é a configuração anterior).
-     * @pos succ não é modificada.
-     */
-    private int chooseMovement(List<Ilayout> succ, Ilayout previous) {
-        if (succ.isEmpty()) {
-            return -1;
-        }
-
-        int r = rnd.nextInt(succ.size());
-
-        if (succ.get(r).equals(previous)) {
-            if (succ.size() == 1) return -1;
-            int other = rnd.nextInt(succ.size() - 1);
-            r = (other >= r) ? other + 1 : other;
-        }
-        return r;
-    }
-
-    /**
      * Escolhe o próximo movimento do rollout de acordo com a política epsilon-greedy.
      * Com probabilidade epsilon, sorteia um sucessor com randomChild (fase de exploração).
      * Caso contrário, escolhe o sucessor de menor heurística que ainda não esteja no caminho
