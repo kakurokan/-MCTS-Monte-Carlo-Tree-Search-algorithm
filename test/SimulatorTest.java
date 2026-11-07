@@ -120,7 +120,6 @@ public class SimulatorTest {
 
         @Test
         public void shouldSolveSuccessfully_whenUsingPureGreedyPolicy() {
-            // epsilon = 0.0 força o simulador a seguir o nó com a menor heurística em cada passo
             Simulator simulator = new Simulator(1, 50.0, new Random(42), 0.0);
             BallSortLayout startLayout = new BallSortLayout("A B E\nB A E");
             BallSortLayout goalLayout = new BallSortLayout("A B E\nA B E");
@@ -139,6 +138,43 @@ public class SimulatorTest {
 
             assertThatThrownBy(() -> simulator.simulate(layout, layout))
                     .isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        public void shouldPreferSolvedRollout_whenCostsAreEqual() {
+            Simulator simulator = new Simulator(100, 2.0, new Random(42));
+            BallSortLayout startLayout = new BallSortLayout("E E A\nA B B");
+            BallSortLayout goalLayout  = new BallSortLayout("A B E\nA B E");
+
+            SimResult result = simulator.simulate(startLayout, goalLayout);
+
+            assertThat(result.getCost()).isEqualTo(2.0);
+            assertThat(result.isSolved()).isTrue();
+            assertThat(result.getPath()).hasSize(2);
+        }
+
+        @Test
+        public void shouldPerformPureRandomRollouts_whenEpsilonIsOne() {
+            Simulator simulator = new Simulator(5, 50.0, new Random(42), 1.0);
+            BallSortLayout startLayout = new BallSortLayout("A B E\nB A E");
+            BallSortLayout goalLayout = new BallSortLayout("A B E\nA B E");
+
+            SimResult result = simulator.simulate(startLayout, goalLayout);
+            assertThat(result).isNotNull();
+            assertThat(result.getCost()).isGreaterThan(0.0);
+        }
+
+        @Test
+        public void shouldReturnCMax_whenOnlyMovementIsToUndoPreviousStep() {
+            Simulator simulator = new Simulator(1, 50.0, new Random(42));
+            BallSortLayout deadEndLayout = new BallSortLayout("A B\nB A");
+            BallSortLayout goalLayout = new BallSortLayout("A B E\nA B E");
+
+            SimResult result = simulator.simulate(deadEndLayout, goalLayout);
+
+            assertThat(result.isSolved()).isFalse();
+            assertThat(result.getCost()).isEqualTo(50.0);
+            assertThat(result.getPath()).isNull();
         }
     }
 }

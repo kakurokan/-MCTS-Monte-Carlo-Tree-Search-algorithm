@@ -78,6 +78,13 @@ public class MCTSTest {
             assertThatCode(() -> new MCTS(10.0, 100, sim, 15.0, 0.2, 5))
                     .doesNotThrowAnyException();
         }
+
+        @Test
+        public void shouldThrowException_whenSimulatorIsNull() {
+            assertThatThrownBy(() -> new MCTS(10.0, 100, null, 20.0, 0.2, 10))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("simulator não pode ser nulo");
+        }
     }
 
     @Nested
@@ -192,6 +199,19 @@ public class MCTSTest {
 
             assertThat(root.isExhausted()).isTrue();
         }
+
+        @Test
+        public void shouldNotExhaustFather_whenAtLeastOneChildIsStillActive() {
+            BallSortLayout layout = new BallSortLayout("A B E\nB A E");
+            MCTS.State root = new MCTS.State(layout, null, 50.0);
+
+            root.expand(50.0, 5);
+            assertThat(root.getChildren().size()).isGreaterThan(1);
+
+            root.getChildren().get(0).markExhausted();
+
+            assertThat(root.isExhausted()).isFalse();
+        }
     }
 
     @Nested
@@ -233,6 +253,28 @@ public class MCTSTest {
         }
 
         @Test
+        public void shouldIgnoreExhaustedChildren_whenSelecting() {
+            Simulator sim = new Simulator(1, 50.0, new Random());
+            MCTS mcts = new MCTS(50.0, 100, sim, 100.0, 0.2, 10);
+
+            BallSortLayout layout = new BallSortLayout("A B E\nB A E");
+            MCTS.State root = new MCTS.State(layout, null, 50.0);
+            root.expand(50.0, 5);
+
+            for (MCTS.State child : root.getChildren()) {
+                mcts.backpropagate(child, 10.0);
+            }
+
+            MCTS.State firstChild = root.getChildren().get(0);
+            firstChild.markExhausted();
+
+            MCTS.State selected = mcts.select(root);
+
+            assertThat(selected).isNotEqualTo(firstChild);
+            assertThat(selected.isExhausted()).isFalse();
+        }
+
+        @Test
         public void shouldSolvePuzzle_whenStartIsGoal() {
             Simulator sim = new Simulator(1, 50.0, new Random());
             MCTS mcts = new MCTS(50.0, 100, sim, 100.0, 0.2, 10);
@@ -248,17 +290,46 @@ public class MCTSTest {
         }
 
         @Test
+        public void shouldReturnNull_whenNoSolutionIsFound() {
+            BallSortLayout deadEnd = new BallSortLayout("A B\nB A");
+            BallSortLayout goal = new BallSortLayout("A B E\nA B E");
+
+            Simulator sim = new Simulator(1, 10.0, new Random(42));
+            MCTS mcts = new MCTS(10.0, 10, sim, 20.0, 0.2, 2);
+
+            Iterator<MCTS.State> solution = mcts.solve(deadEnd, goal);
+
+            assertThat(solution).isNull();
+        }
+
+        @Test
         public void shouldSolvePuzzle_whenGoalIsReachableInOneMove() {
             Simulator sim = new Simulator(1, 50.0, new Random(42), 0.0);
             MCTS mcts = new MCTS(50.0, 50, sim, 100.0, 0.2, 5);
 
-            BallSortLayout startLayout = new BallSortLayout("A B E\nB A E");
-            BallSortLayout goalLayout = new BallSortLayout("A B E\nA B E");
+            BallSortLayout startLayout = new BallSortLayout("A B E\nA E B");
+            BallSortLayout goalLayout  = new BallSortLayout("A E B\nA E B");
 
             Iterator<MCTS.State> solution = mcts.solve(startLayout, goalLayout);
 
             assertThat(solution).isNotNull();
-            assertThat(solution.hasNext()).isTrue();
+
+            java.util.List<MCTS.State> path = new java.util.ArrayList<>();
+            while (solution.hasNext()) {
+                path.add(solution.next());
+            }
+
+            assertThat(path).hasSize(2);
+
+            assertThat(path.get(0).getLayout()).isEqualTo(startLayout);
+            assertThat(path.get(1).getLayout().isGoal(goalLayout)).isTrue();
+
+            java.util.Set<core.Ilayout> visitedLayouts = new java.util.HashSet<>();
+            for (MCTS.State s : path) {
+                assertThat(visitedLayouts.add(s.getLayout()))
+                        .as("O caminho devolvido não deve conter ciclos/configurações repetidas")
+                        .isTrue();
+            }
         }
     }
 }
