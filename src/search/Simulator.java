@@ -66,6 +66,7 @@ public class Simulator {
         if (cMax <= 0) throw new IllegalArgumentException("cMax tem de ser n > 0");
         if(Double.isNaN(epsilon))  throw new IllegalArgumentException("epsilon não pode ser NaN");
         if (epsilon < 0 || epsilon > 1) throw new IllegalArgumentException("epsilon tem de estar em [0, 1]");
+        if (rnd == null) throw new IllegalArgumentException("rnd não pode ser nulo");
         this.n = n;
         this.cMax = cMax;
         this.rnd = rnd;

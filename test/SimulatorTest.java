@@ -132,12 +132,10 @@ public class SimulatorTest {
         }
 
         @Test
-        public void shouldThrowNullPointerException_whenRandomIsNull() {
-            Simulator simulator = new Simulator(1, 10.0, null);
-            BallSortLayout layout = new BallSortLayout("A B E\nB A E");
-
-            assertThatThrownBy(() -> simulator.simulate(layout, layout))
-                    .isInstanceOf(NullPointerException.class);
+        public void shouldThrowException_whenRandomIsNull() {
+            assertThatThrownBy(() -> new Simulator(1, 10.0, null))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("rnd não pode ser nulo");
         }
 
         @Test

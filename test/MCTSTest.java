@@ -291,8 +291,8 @@ public class MCTSTest {
 
         @Test
         public void shouldReturnNull_whenNoSolutionIsFound() {
-            BallSortLayout deadEnd = new BallSortLayout("A B\nB A");
-            BallSortLayout goal = new BallSortLayout("A B E\nA B E");
+            BallSortLayout deadEnd = new BallSortLayout("A B C\nB C A");
+            BallSortLayout goal    = new BallSortLayout("A B C\nA B C");
 
             Simulator sim = new Simulator(1, 10.0, new Random(42));
             MCTS mcts = new MCTS(10.0, 10, sim, 20.0, 0.2, 2);
