@@ -1,5 +1,5 @@
-import search.Simulator;
-import search.MCTS;
+package search;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import puzzles.BallSortLayout;
