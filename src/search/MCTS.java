@@ -55,6 +55,10 @@ public class MCTS {
             throw new IllegalArgumentException("parâmetros inválidos");
         }
 
+        if(simulator == null) {
+            throw new IllegalArgumentException("simulator não pode ser nulo");
+        }
+
         if (fMax < maxDepth + cMax) {
             throw new IllegalArgumentException("fMax inválido. fMax deve ser maior ou igual à maxDepth + cMax");
         }
