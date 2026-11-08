@@ -15,7 +15,9 @@ import java.util.List;
  * @inv Se isSolved(), getPath() é uma lista não modificável.
  */
 public class SimResult {
+    /** Configurações percorridas (sem a inicial); {@code null} se a simulação falhou. */
     private List<Ilayout> path;
+    /** Custo da simulação, truncado em Cmax. */
     private double minCost;
 
     /**

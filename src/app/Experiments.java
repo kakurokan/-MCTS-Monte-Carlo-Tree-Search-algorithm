@@ -15,19 +15,33 @@ import java.util.Random;
 
 /**
  * Classe responsável por correr os benchmarks do algoritmo MCTS.
- *
+ * <p>
+ * Para cada instância e cada valor de epsilon, corre o MCTS com as sementes 1 a 30 e
+ * escreve uma linha por execução no ficheiro CSV {@code mcts_experiments_results.csv}
+ * (custo obtido, óptimo conhecido, tempo em ms e se foi encontrada solução).
+ * <p>
  * Parâmetros utilizados:
- * - epsilons: Valores de exploração testados (0.0, 0.1, 0.3, 1.0)
- * - cMax: Custo máximo permitido por simulação (500.0)
- * - maxDepth: Profundidade máxima da árvore (100)
- * - n: Número de rollouts por simulação (1)
- *
- * NOTA DE EXECUÇÃO: Esta classe deve ser executada a partir da raiz do repositório
+ * <ul>
+ *   <li>epsilons: probabilidades de passo aleatório no rollout testadas (0.0, 0.1, 0.3, 1.0);</li>
+ *   <li>c: constante de exploração do UCB (0.3);</li>
+ *   <li>cMax: custo máximo permitido por simulação (500.0);</li>
+ *   <li>maxDepth: profundidade máxima da árvore (100);</li>
+ *   <li>n: número de rollouts por simulação (1);</li>
+ *   <li>maxIterations: número máximo de iterações do MCTS (15000);</li>
+ *   <li>fMax: cMax + maxDepth.</li>
+ * </ul>
+ * NOTA DE EXECUÇÃO: esta classe deve ser executada a partir da raiz do repositório
  * para que os caminhos da diretoria "instancias/" sejam lidos corretamente.
  */
 
 public class Experiments {
 
+    /**
+     * Corre todas as experiências e escreve os resultados no CSV. Não usa argumentos.
+     * Se não for possível abrir ou ler algum ficheiro, escreve o erro em {@code System.err}.
+     *
+     * @param args ignorado.
+     */
     public static void main(String[] args) {
         String csvFileName = "mcts_experiments_results.csv";
 
@@ -107,6 +121,13 @@ public class Experiments {
         }
     }
 
+    /**
+     * Lê o conteúdo completo de um ficheiro de texto.
+     *
+     * @param path caminho do ficheiro.
+     * @return o conteúdo do ficheiro.
+     * @throws IOException se o ficheiro não existir ou não puder ser lido.
+     */
     private static String lerFicheiro(String path) throws IOException {
         return Files.readString(Path.of(path));
     }

@@ -14,9 +14,13 @@ import java.util.*;
  * @inv nenhum tubo excede maxTubeSize bolas
  */
 public class BallSortLayout implements Ilayout, Cloneable {
+    /** Custo de um movimento (sempre 1). */
     private final int K;
+    /** Capacidade de cada tubo (número de linhas da configuração). */
     private final int maxTubeSize;
+    /** Tubos da configuração; cada pilha tem a base no índice 0. */
     private List<Stack<Character>> tubes;
+    /** Hash em cache; 0 significa ainda não calculado. */
     private int hash;
 
     /**
@@ -311,7 +315,8 @@ public class BallSortLayout implements Ilayout, Cloneable {
      *
      * @param rnd   gerador de números aleatórios
      * @param avoid estado a evitar (geralmente o estado de onde esta configuração derivou)
-     * @return um estado filho aleatório válido, ou {@code null} se for um beco sem saída.
+     * @return um estado filho aleatório válido, ou {@code null} se não houver jogadas possíveis
+     *         ou se a única jogada possível levar ao estado {@code avoid}.
      */
     private Ilayout randomChildByEnumeration(Random rnd, Ilayout avoid) {
         int n = tubes.size();

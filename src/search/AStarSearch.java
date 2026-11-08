@@ -6,6 +6,10 @@ import java.util.*;
 
 /**
  * Pesquisa A* sobre configurações {@link Ilayout}, com f(n) = g(n) + h(n).
+ * <p>
+ * Mantém uma fila de prioridade de estados abertos (ordenada por f) e um mapa de estados
+ * fechados; um estado só é reaberto se for alcançado com menor custo g. O custo de cada
+ * transição é dado por {@link Ilayout#getK()}.
  */
 public class AStarSearch {
     /** Fila de prioridade dos estados por expandir, ordenada por f. */
@@ -104,6 +108,7 @@ public class AStarSearch {
         }
 
         /** @return a representação textual da configuração do estado. */
+        @Override
         public String toString() {
             return layout.toString();
         }
@@ -119,6 +124,7 @@ public class AStarSearch {
         }
 
         /** @return o hash da configuração do estado. */
+        @Override
         public int hashCode() {
             return layout.hashCode();
         }
@@ -129,6 +135,7 @@ public class AStarSearch {
          * @param o objeto a comparar.
          * @return {@code true} se {@code o} for um estado com a mesma configuração.
          */
+        @Override
         public boolean equals(Object o) {
             if (o == null) return false;
             if (this.getClass() != o.getClass()) return false;

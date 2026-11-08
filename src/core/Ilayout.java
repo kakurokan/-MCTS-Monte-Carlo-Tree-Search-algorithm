@@ -26,9 +26,12 @@ public interface Ilayout {
     /**
      * Verifica se esta configuração corresponde à configuração objetivo indicada.
      *
-     * @param l A configuração objetivo a comparar com esta. Não pode ser nula.
-     * @return {@code true} se esta configuração for igual a {@code l}; {@code false} caso contrário.
-     * @pre l != null
+     * @param l A configuração objetivo a comparar com esta. Pode ser {@code null} se a
+     *          implementação decidir o objetivo apenas a partir da própria configuração
+     *          (como {@code BallSortLayout}).
+     * @return {@code true} se esta configuração for igual a {@code l} (ou satisfizer o objetivo
+     *         do problema); {@code false} caso contrário.
+     * @pre l != null, exceto se a implementação ignorar {@code l}
      * @pos Esta configuração e {@code l} não são modificadas.
      */
     boolean isGoal(Ilayout l);
@@ -46,9 +49,9 @@ public interface Ilayout {
     /**
      * Estima o custo desta configuração até à configuração objetivo.
      *
-     * @param goal A configuração objetivo. Não pode ser nula.
+     * @param goal A configuração objetivo. Pode ser {@code null} se a implementação a ignorar.
      * @return O valor da heurística (quanto menor, mais próximo do objetivo).
-     * @pre goal != null
+     * @pre goal != null, exceto se a implementação ignorar {@code goal}
      * @pos getHeuristic(goal) >= 0
      * @pos Esta configuração e {@code goal} não são modificadas.
      */

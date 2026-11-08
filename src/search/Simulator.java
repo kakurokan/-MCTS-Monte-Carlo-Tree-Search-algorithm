@@ -20,7 +20,7 @@ import java.util.*;
  * Os rollouts nunca desfazem o movimento imediatamente anterior. Se voltarem a uma
  * configuração já visitada, o ciclo é eliminado do caminho, e o custo devolvido é o
  * do caminho sem ciclos. A truncagem em Cmax conta todos os movimentos aplicados,
- * incluindo quais foram eliminados em ciclos, o que garante que cada rollout termina.
+ * incluindo os que foram eliminados em ciclos, o que garante que cada rollout termina.
  *
  * @inv n >= 1
  * @inv cMax > 0
@@ -78,11 +78,11 @@ public class Simulator {
      * Em caso de empate no custo, prefere um rollout que tenha chegado ao objetivo.
      *
      * @param start A configuração onde começa a simulação. Não pode ser nula.
-     * @param goal  A configuração objetivo. Não pode ser nula.
+     * @param goal  A configuração objetivo. Pode ser nula se a implementação de {@link Ilayout} a ignorar.
      * @return O resultado de menor custo entre os n rollouts; custo Cmax e caminho
      * nulo se nenhum rollout chegou ao objetivo.
      * @pre start != null
-     * @pre goal != null
+     * @pre goal != null, exceto se a implementação de Ilayout ignorar o objetivo
      * @pos O resultado nunca é nulo.
      * @pos 0 &lt;= resultado.getCost() &lt;= cMax
      * @pos Se resultado.isSolved(), o caminho não tem configurações repetidas.
@@ -114,11 +114,11 @@ public class Simulator {
      * caminho resultante.
      *
      * @param start A configuração onde começa o rollout. Não pode ser nula.
-     * @param goal  A configuração objetivo. Não pode ser nula.
+     * @param goal  A configuração objetivo. Pode ser nula se a implementação de {@link Ilayout} a ignorar.
      * @return O custo e o caminho sem ciclos até ao objetivo (sem incluir start), se o
      *         rollout o alcançou; custo cMax e caminho nulo caso contrário.
      * @pre start != null
-     * @pre goal != null
+     * @pre goal != null, exceto se a implementação de Ilayout ignorar o objetivo
      * @pos O resultado nunca é nulo.
      * @pos 0 &lt;= resultado.getCost() &lt;= cMax
      * @pos Se resultado.isSolved(), o caminho não tem configurações repetidas nem contém start.

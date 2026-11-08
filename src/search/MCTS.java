@@ -116,10 +116,11 @@ public class MCTS {
      * (encadeados entre si), pelo que estes não pertencem à árvore de pesquisa.
      *
      * @param start A configuração inicial. Não pode ser nula.
-     * @param goal  A configuração objetivo. Não pode ser nula.
+     * @param goal  A configuração objetivo. Pode ser nula se a implementação de {@link Ilayout} a ignorar
+     *              (como {@code BallSortLayout}).
      * @return Iterador sobre os estados do melhor caminho encontrado, sem configurações repetidas,
      * da raiz até ao objetivo, ou {@code null} se nenhuma solução tiver sido encontrada.
-     * @pre start != null && goal != null
+     * @pre start != null; goal != null, exceto se a implementação de Ilayout ignorar o objetivo
      * @pos Se o resultado não for nulo, o primeiro estado corresponde a {@code start} e o último satisfaz isGoal(goal).
      * @pos Se o resultado não for nulo, cada estado é sucessor do anterior por um único movimento legal.
      * @pos Se o resultado não for nulo, não há configurações repetidas no caminho.
