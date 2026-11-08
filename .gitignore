@@ -28,3 +28,5 @@ replay_pid*
 *.iml
 .claude/
 .DS_Store
+
+mcts_experiments_results.csv

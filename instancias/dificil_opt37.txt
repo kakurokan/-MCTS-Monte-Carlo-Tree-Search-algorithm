@@ -1,14 +1,6 @@
-B P E E B
-R P E E R
-P B E E R
-B R E E B
-P R E E P
-R R E E B
-B P E E R
-P B E E R
-P B E E P
-R B E E R
-P B E E B
-R R E E P
-P P E E R
-P B E E B
+G P G B Y R E E
+P R O G Y B E E
+O R O B P Y E E
+B O R G Y R E E
+P Y B Y G O E E
+O P B P R G E E

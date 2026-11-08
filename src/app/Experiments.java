@@ -13,6 +13,19 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Random;
 
+/**
+ * Classe responsável por correr os benchmarks do algoritmo MCTS.
+ *
+ * Parâmetros utilizados:
+ * - epsilons: Valores de exploração testados (0.0, 0.1, 0.3, 1.0)
+ * - cMax: Custo máximo permitido por simulação (500.0)
+ * - maxDepth: Profundidade máxima da árvore (100)
+ * - n: Número de rollouts por simulação (1)
+ *
+ * NOTA DE EXECUÇÃO: Esta classe deve ser executada a partir da raiz do repositório
+ * para que os caminhos da diretoria "instancias/" sejam lidos corretamente.
+ */
+
 public class Experiments {
 
     public static void main(String[] args) {
@@ -28,7 +41,9 @@ public class Experiments {
 
         // Seeds de 1 a 30
         int[] seeds = new int[30];
-        for (int i = 0; i < 30; i++) seeds[i] = i + 1;
+        for (int i = 0; i < 30; i++) {
+            seeds[i] = i + 1;
+        }
 
         String[] files = {"instancias/dificil_opt37.txt", "instancias/muito_dificil_opt65.txt"};
         String[] labels = {"dificil", "muito_dificil"};
@@ -63,7 +78,7 @@ public class Experiments {
                         long elapsed = System.currentTimeMillis() - start;
 
                         boolean solved = (sol != null);
-                        double cost = cMax; // Se falhar, regista o custo máximo
+                        double cost = -1.0;
 
                         // Se encontrou a solução, vai até ao último passo para ver o custo final
                         if (solved) {
