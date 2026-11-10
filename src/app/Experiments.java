@@ -18,7 +18,7 @@ import java.util.Random;
  * <p>
  * Para cada instância e cada valor de epsilon, corre o MCTS com as sementes 1 a 30 e
  * escreve uma linha por execução no ficheiro CSV {@code mcts_experiments_results.csv}
- * (custo obtido, óptimo conhecido, tempo em ms e se foi encontrada solução).
+ * (custo obtido, ótimo conhecido, tempo em ms e foi-se encontrada solução).
  * <p>
  * Parâmetros utilizados:
  * <ul>
@@ -40,9 +40,8 @@ public class Experiments {
      * Corre todas as experiências e escreve os resultados no CSV. Não usa argumentos.
      * Se não for possível abrir ou ler algum ficheiro, escreve o erro em {@code System.err}.
      *
-     * @param args ignorado.
      */
-    public static void main(String[] args) {
+    public static void main() {
         String csvFileName = "mcts_experiments_results.csv";
 
         // Parâmetros do benchmark
@@ -85,7 +84,7 @@ public class Experiments {
                         double fMax = cMax + maxDepth;
 
                         // Inicializar o MCTS
-                        MCTS mcts = new MCTS(cMax, maxIterations, sim, fMax, c, maxDepth);
+                        MCTS mcts = new MCTS(cMax, maxIterations, sim, fMax, c, maxDepth, true);
 
                         long start = System.currentTimeMillis();
                         Iterator<MCTS.State> sol = mcts.solve(startNode, goal);

@@ -22,11 +22,11 @@ public class MCTSTest {
         public void shouldThrowException_whenMaxIterationsIsInvalid() {
             Simulator sim = new Simulator(1, 10.0, new Random());
 
-            assertThatThrownBy(() -> new MCTS(10.0, 0, sim, 20.0, 0.2, 10))
+            assertThatThrownBy(() -> new MCTS(10.0, 0, sim, 20.0, 0.2, 10, true))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("parâmetros inválidos");
 
-            assertThatThrownBy(() -> new MCTS(10.0, -5, sim, 20.0, 0.2, 10))
+            assertThatThrownBy(() -> new MCTS(10.0, -5, sim, 20.0, 0.2, 10, true))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("parâmetros inválidos");
         }
@@ -35,11 +35,11 @@ public class MCTSTest {
         public void shouldThrowException_whenCMaxIsInvalid() {
             Simulator sim = new Simulator(1, 10.0, new Random());
 
-            assertThatThrownBy(() -> new MCTS(0.0, 100, sim, 20.0, 0.2, 10))
+            assertThatThrownBy(() -> new MCTS(0.0, 100, sim, 20.0, 0.2, 10, true))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("parâmetros inválidos");
 
-            assertThatThrownBy(() -> new MCTS(-10.0, 100, sim, 20.0, 0.2, 10))
+            assertThatThrownBy(() -> new MCTS(-10.0, 100, sim, 20.0, 0.2, 10, true))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("parâmetros inválidos");
         }
@@ -48,7 +48,7 @@ public class MCTSTest {
         public void shouldThrowException_whenMaxDepthIsInvalid() {
             Simulator sim = new Simulator(1, 10.0, new Random());
 
-            assertThatThrownBy(() -> new MCTS(10.0, 100, sim, 20.0, 0.2, 0))
+            assertThatThrownBy(() -> new MCTS(10.0, 100, sim, 20.0, 0.2, 0, true))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("parâmetros inválidos");
         }
@@ -57,7 +57,7 @@ public class MCTSTest {
         public void shouldThrowException_whenCIsNegative() {
             Simulator sim = new Simulator(1, 10.0, new Random());
 
-            assertThatThrownBy(() -> new MCTS(10.0, 100, sim, 20.0, -0.1, 10))
+            assertThatThrownBy(() -> new MCTS(10.0, 100, sim, 20.0, -0.1, 10, true))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("parâmetros inválidos");
         }
@@ -66,7 +66,7 @@ public class MCTSTest {
         public void shouldThrowException_whenFMaxIsLessThanMaxDepthPlusCMax() {
             Simulator sim = new Simulator(1, 10.0, new Random());
 
-            assertThatThrownBy(() -> new MCTS(10.0, 100, sim, 5.0, 0.2, 5))
+            assertThatThrownBy(() -> new MCTS(10.0, 100, sim, 5.0, 0.2, 5, true))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("fMax inválido. fMax deve ser maior ou igual à maxDepth + cMax");
         }
@@ -75,13 +75,13 @@ public class MCTSTest {
         public void shouldNotThrowException_whenFMaxIsExactlyMaxDepthPlusCMax() {
             Simulator sim = new Simulator(1, 10.0, new Random());
 
-            assertThatCode(() -> new MCTS(10.0, 100, sim, 15.0, 0.2, 5))
+            assertThatCode(() -> new MCTS(10.0, 100, sim, 15.0, 0.2, 5, true))
                     .doesNotThrowAnyException();
         }
 
         @Test
         public void shouldThrowException_whenSimulatorIsNull() {
-            assertThatThrownBy(() -> new MCTS(10.0, 100, null, 20.0, 0.2, 10))
+            assertThatThrownBy(() -> new MCTS(10.0, 100, null, 20.0, 0.2, 10, true))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("simulator não pode ser nulo");
         }
@@ -220,7 +220,7 @@ public class MCTSTest {
         @Test
         public void shouldUpdateAncestorVisitsAndCosts_whenBackpropagating() {
             Simulator sim = new Simulator(1, 50.0, new Random());
-            MCTS mcts = new MCTS(50.0, 100, sim, 100.0, 0.2, 10);
+            MCTS mcts = new MCTS(50.0, 100, sim, 100.0, 0.2, 10, true);
 
             BallSortLayout layout = new BallSortLayout("A B E\nB A E");
             MCTS.State root = new MCTS.State(layout, null, 50.0);
@@ -236,7 +236,7 @@ public class MCTSTest {
         @Test
         public void shouldSelectLeafNode_whenNavigatingTree() {
             Simulator sim = new Simulator(1, 50.0, new Random());
-            MCTS mcts = new MCTS(50.0, 100, sim, 100.0, 0.2, 10);
+            MCTS mcts = new MCTS(50.0, 100, sim, 100.0, 0.2, 10, true);
 
             BallSortLayout layout = new BallSortLayout("A B E\nB A E");
             MCTS.State root = new MCTS.State(layout, null, 50.0);
@@ -255,7 +255,7 @@ public class MCTSTest {
         @Test
         public void shouldIgnoreExhaustedChildren_whenSelecting() {
             Simulator sim = new Simulator(1, 50.0, new Random());
-            MCTS mcts = new MCTS(50.0, 100, sim, 100.0, 0.2, 10);
+            MCTS mcts = new MCTS(50.0, 100, sim, 100.0, 0.2, 10, true);
 
             BallSortLayout layout = new BallSortLayout("A B E\nB A E");
             MCTS.State root = new MCTS.State(layout, null, 50.0);
@@ -277,7 +277,7 @@ public class MCTSTest {
         @Test
         public void shouldSolvePuzzle_whenStartIsGoal() {
             Simulator sim = new Simulator(1, 50.0, new Random());
-            MCTS mcts = new MCTS(50.0, 100, sim, 100.0, 0.2, 10);
+            MCTS mcts = new MCTS(50.0, 100, sim, 100.0, 0.2, 10, true);
 
             BallSortLayout goalLayout = new BallSortLayout("A B E\nA B E");
 
@@ -290,12 +290,50 @@ public class MCTSTest {
         }
 
         @Test
+        public void shouldReturnValidPathAndNeverExhaustRoot_whenUseExhaustedIsFalse() {
+            Simulator sim = new Simulator(1, 50.0, new Random(42), 0.0);
+            MCTS mcts = new MCTS(50.0, 50, sim, 100.0, 0.2, 5, false);
+
+            BallSortLayout startLayout = new BallSortLayout("A B E\nA E B");
+            BallSortLayout goalLayout = new BallSortLayout("A E B\nA E B");
+
+            Iterator<MCTS.State> solution = mcts.solve(startLayout, goalLayout);
+
+            assertThat(solution).isNotNull();
+            java.util.List<MCTS.State> path = new java.util.ArrayList<>();
+            while (solution.hasNext()) {
+                path.add(solution.next());
+            }
+
+            assertThat(path).isNotEmpty();
+            assertThat(path.get(0).getLayout()).isEqualTo(startLayout);
+            assertThat(path.get(path.size() - 1).getLayout().isGoal(goalLayout)).isTrue();
+            assertThat(mcts.getLastRoot()).isNotNull();
+            assertThat(mcts.getLastRoot().isExhausted()).isFalse();
+        }
+
+        @Test
+        public void shouldHaveRawCostGreaterOrEqualToFinalCost_afterSolving() {
+            Simulator sim = new Simulator(1, 50.0, new Random(42), 0.0);
+            MCTS mcts = new MCTS(50.0, 50, sim, 100.0, 0.2, 5, true);
+
+            BallSortLayout startLayout = new BallSortLayout("A B E\nA E B");
+            BallSortLayout goalLayout = new BallSortLayout("A E B\nA E B");
+
+            assertThat(mcts.solve(startLayout, goalLayout)).isNotNull();
+
+            assertThat(mcts.getLastRawCost()).isFinite();
+            assertThat(mcts.getLastFinalCost()).isFinite();
+            assertThat(mcts.getLastRawCost()).isGreaterThanOrEqualTo(mcts.getLastFinalCost());
+        }
+
+        @Test
         public void shouldReturnNull_whenNoSolutionIsFound() {
             BallSortLayout deadEnd = new BallSortLayout("A B C\nB C A");
-            BallSortLayout goal    = new BallSortLayout("A B C\nA B C");
+            BallSortLayout goal = new BallSortLayout("A B C\nA B C");
 
             Simulator sim = new Simulator(1, 10.0, new Random(42));
-            MCTS mcts = new MCTS(10.0, 10, sim, 20.0, 0.2, 2);
+            MCTS mcts = new MCTS(10.0, 10, sim, 20.0, 0.2, 2, true);
 
             Iterator<MCTS.State> solution = mcts.solve(deadEnd, goal);
 
@@ -305,10 +343,10 @@ public class MCTSTest {
         @Test
         public void shouldSolvePuzzle_whenGoalIsReachableInOneMove() {
             Simulator sim = new Simulator(1, 50.0, new Random(42), 0.0);
-            MCTS mcts = new MCTS(50.0, 50, sim, 100.0, 0.2, 5);
+            MCTS mcts = new MCTS(50.0, 50, sim, 100.0, 0.2, 5, true);
 
             BallSortLayout startLayout = new BallSortLayout("A B E\nA E B");
-            BallSortLayout goalLayout  = new BallSortLayout("A E B\nA E B");
+            BallSortLayout goalLayout = new BallSortLayout("A E B\nA E B");
 
             Iterator<MCTS.State> solution = mcts.solve(startLayout, goalLayout);
 

@@ -34,6 +34,11 @@ public class MCTS {
     private final double fMax;
     private final double c;
     private final int maxDepth;
+    private final boolean useExhausted;
+
+    private State lastRoot;
+    private double lastRawCost = Double.POSITIVE_INFINITY;
+    private double lastFinalCost = Double.POSITIVE_INFINITY;
 
     /**
      * Cria uma instância do MCTS com os parâmetros indicados.
@@ -50,12 +55,12 @@ public class MCTS {
      * @pre fMax >= maxDepth + cMax
      * @pre simulator != null
      */
-    public MCTS(double cMax, int maxIterations, Simulator simulator, double fMax, double c, int maxDepth) {
+    public MCTS(double cMax, int maxIterations, Simulator simulator, double fMax, double c, int maxDepth, boolean useExhausted) {
         if (maxIterations <= 0 || cMax <= 0 || maxDepth <= 0 || c < 0) {
             throw new IllegalArgumentException("parâmetros inválidos");
         }
 
-        if(simulator == null) {
+        if (simulator == null) {
             throw new IllegalArgumentException("simulator não pode ser nulo");
         }
 
@@ -69,6 +74,7 @@ public class MCTS {
         this.fMax = fMax;
         this.c = c;
         this.maxDepth = maxDepth;
+        this.useExhausted = useExhausted;
     }
 
     /**
@@ -129,6 +135,9 @@ public class MCTS {
      */
     public Iterator<State> solve(Ilayout start, Ilayout goal) {
         State root = new State(start, null, cMax);
+        lastRoot = root;
+        lastRawCost = Double.POSITIVE_INFINITY;
+        lastFinalCost = Double.POSITIVE_INFINITY;
 
         double bestCost = Double.POSITIVE_INFINITY;
         State bestNode = null;
@@ -147,14 +156,18 @@ public class MCTS {
                 }
 
                 backpropagate(leaf, 0);
-                leaf.markExhausted();
+                if (useExhausted) {
+                    leaf.markExhausted();
+                }
                 continue;
             }
 
             List<State> children = leaf.expand(cMax, maxDepth);
             if (children.isEmpty()) {
                 backpropagate(leaf, cMax);
-                leaf.markExhausted();
+                if (useExhausted) {
+                    leaf.markExhausted();
+                }
                 continue;
             }
 
@@ -201,7 +214,33 @@ public class MCTS {
             prev = s;
         }
 
+        lastRawCost = bestCost;
+        lastFinalCost = prev.getG();
+
         return finalPath.iterator();
+    }
+
+    /**
+     * @return A raiz da árvore criada pelo último {@link #solve}, ou {@code null} se ainda não foi chamado.
+     */
+    public State getLastRoot() {
+        return lastRoot;
+    }
+
+    /**
+     * @return O custo da melhor solução do último {@link #solve} antes da remoção de ciclos,
+     * ou {@code +infinito} se não houve solução.
+     */
+    public double getLastRawCost() {
+        return lastRawCost;
+    }
+
+    /**
+     * @return O custo do caminho devolvido pelo último {@link #solve} (após remoção de ciclos),
+     * ou {@code +infinito} se não houve solução.
+     */
+    public double getLastFinalCost() {
+        return lastFinalCost;
     }
 
     /**
