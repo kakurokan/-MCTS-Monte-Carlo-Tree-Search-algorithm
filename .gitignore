@@ -31,3 +31,5 @@ replay_pid*
 
 mcts_experiments_results.csv
 exp_exaustos.csv
+
+exp_parametros.csv
