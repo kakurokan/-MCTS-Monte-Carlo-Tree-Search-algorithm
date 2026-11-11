@@ -190,7 +190,6 @@ public class MCTSTest {
             BallSortLayout layout = new BallSortLayout("A B E\nB A E");
             MCTS.State root = new MCTS.State(layout, null, 50.0);
 
-            MCTS.State child = new MCTS.State(layout, root, 50.0);
             root.expand(50.0, 5);
 
             for (MCTS.State c : root.getChildren()) {
