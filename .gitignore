@@ -29,4 +29,5 @@ replay_pid*
 .claude/
 .DS_Store
 
-mcts_experiments_results.csvexp_exaustos.csv
+mcts_experiments_results.csv
+exp_exaustos.csv
