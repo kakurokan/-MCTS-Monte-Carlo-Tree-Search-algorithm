@@ -32,6 +32,13 @@ public class Simulator {
     private final Random rnd;
     private final double epsilon;
 
+    /** Número de rollouts feitos por este simulador (para as experiências). */
+    private long rolloutCount = 0;
+    /** Número de rollouts cortados por o próximo movimento ultrapassar cMax. */
+    private long cutCount = 0;
+    /** Número de rollouts que terminaram num beco sem saída. */
+    private long deadEndCount = 0;
+
     /**
      * Cria um simulador com rollouts totalmente aleatórios (equivale a epsilon = 1).
      *
@@ -131,6 +138,7 @@ public class Simulator {
         Ilayout current = start;
         Ilayout previous = null;
         double spent = 0;  // custo de todos os movimentos aplicados, usado na truncagem em Cmax
+        rolloutCount++;
 
         while (true) {
             if (current.isGoal(goal)) {
@@ -141,9 +149,11 @@ public class Simulator {
 
             Ilayout next = nextMove(current, previous, goal, position);
             if (next == null) {
+                deadEndCount++;
                 return new SimResult(null, cMax);           // beco sem saída
             }
             if (spent + next.getK() > cMax) {
+                cutCount++;
                 return new SimResult(null, cMax);           // o próximo movimento ultrapassaria Cmax
             }
 
@@ -198,5 +208,34 @@ public class Simulator {
             }
         }
         return best != null ? best : current.randomChild(rnd, previous);
+    }
+
+    /**
+     * Devolve o número de rollouts feitos por este simulador desde que foi criado.
+     *
+     * @return O número de rollouts.
+     * @pos resultado &gt;= getCutCount() + getDeadEndCount()
+     */
+    public long getRolloutCount() {
+        return rolloutCount;
+    }
+
+    /**
+     * Devolve o número de rollouts cortados porque o próximo movimento faria o custo
+     * acumulado ultrapassar cMax.
+     *
+     * @return O número de rollouts cortados em cMax.
+     */
+    public long getCutCount() {
+        return cutCount;
+    }
+
+    /**
+     * Devolve o número de rollouts que terminaram num beco sem saída (sem movimentos possíveis).
+     *
+     * @return O número de rollouts terminados em beco sem saída.
+     */
+    public long getDeadEndCount() {
+        return deadEndCount;
     }
 }

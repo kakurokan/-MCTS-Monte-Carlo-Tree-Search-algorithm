@@ -66,7 +66,7 @@ public class Main {
 
         Ilayout start = new BallSortLayout(configuration.toString());
 
-        MCTS s = new MCTS(cMax, iterations, sim, fmax, c, maxDepth);
+        MCTS s = new MCTS(cMax, iterations, sim, fmax, c, maxDepth, true);
         Iterator<MCTS.State> it = s.solve(start, null);
 
         if (it == null) System.out.println("no solution found");
