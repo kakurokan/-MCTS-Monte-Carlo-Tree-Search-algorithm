@@ -11,33 +11,45 @@ import java.util.*;
  * Em cada iteração:
  * <ol>
  *   <li><b>Seleção</b>: desce da raiz até uma folha, escolhendo em cada nível o filho
- *       não esgotado com maior UCB;</li>
- *   <li>se a folha for o objetivo, regista a solução, retropropaga custo 0 e marca-a como esgotada;</li>
+ *       não esgotado com maior UCB (um filho ainda não visitado é escolhido de imediato);</li>
+ *   <li>se a folha for o objetivo, regista a solução, retropropaga custo 0 e, se o rastreio
+ *       de nós esgotados estiver ativo, marca-a como esgotada;</li>
  *   <li><b>Expansão</b>: cria os filhos da folha; se não houver filhos (profundidade máxima
- *       ou sem sucessores), retropropaga cMax e marca-a como esgotada;</li>
+ *       ou sem sucessores), retropropaga cMax e, se o rastreio estiver ativo, marca-a como esgotada;</li>
  *   <li><b>Simulação</b>: para cada filho, usa o {@link Simulator} para estimar o custo até ao objetivo;</li>
  *   <li><b>Retropropagação</b>: atualiza as visitas e o custo estimado do filho e dos seus antecessores.</li>
  * </ol>
  * A melhor solução encontrada (caminho na árvore mais, eventualmente, o caminho de um rollout)
- * é guardada ao longo das iterações. A pesquisa termina ao fim de maxIterations ou quando a
- * raiz fica esgotada (toda a árvore até maxDepth foi explorada).
+ * é guardada ao longo das iterações. A pesquisa termina ao fim de maxIterations ou, se o
+ * rastreio de nós esgotados estiver ativo, quando a raiz fica esgotada (toda a árvore até
+ * maxDepth foi explorada). Sem esse rastreio, nenhum nó é marcado como esgotado.
  *
  * @inv maxIterations > 0, cMax > 0, maxDepth > 0, c >= 0
  * @inv fMax >= maxDepth + cMax
- * @inv Cada movimento tem custo 1 (getK() == 1), pelo que g <= maxDepth e a
+ * @inv Cada movimento tem custo 1 (getK() == 1), pelo que g &lt;= maxDepth e a
  * recompensa fica em [0, 1] quando fMax >= maxDepth + cMax.
  */
 public class MCTS {
+    /** Custo de uma simulação sem solução e custo estimado inicial de cada nó. */
     private final double cMax;
+    /** Número máximo de iterações de {@link #solve}. */
     private final int maxIterations;
+    /** Simulador usado para estimar o custo a partir de cada nó expandido. */
     private final Simulator simulator;
+    /** Custo máximo usado para normalizar a recompensa. */
     private final double fMax;
+    /** Constante de exploração do UCB. */
     private final double c;
+    /** Profundidade máxima da árvore de pesquisa. */
     private final int maxDepth;
+    /** Se {@code true}, os nós esgotados são marcados e ignorados na seleção. */
     private final boolean useExhausted;
 
+    /** Raiz da árvore criada pelo último {@link #solve}; {@code null} antes da primeira chamada. */
     private State lastRoot;
+    /** Custo da melhor solução do último {@link #solve}, antes da remoção de ciclos. */
     private double lastRawCost = Double.POSITIVE_INFINITY;
+    /** Custo do caminho devolvido pelo último {@link #solve}, após a remoção de ciclos. */
     private double lastFinalCost = Double.POSITIVE_INFINITY;
 
     /**
@@ -50,8 +62,11 @@ public class MCTS {
      * @param fMax          Custo máximo usado para normalizar a recompensa. Tem de ser >= maxDepth + cMax.
      * @param c             Constante de exploração do UCB. Não pode ser negativa.
      * @param maxDepth      Profundidade máxima da árvore de pesquisa. Tem de ser positiva.
+     * @param useExhausted  Se {@code true}, os nós sem mais nada a explorar são marcados como
+     *                      esgotados e ignorados na seleção, permitindo terminar antes de
+     *                      maxIterations quando a árvore fica totalmente explorada.
      * @throws IllegalArgumentException se algum dos parâmetros for inválido.
-     * @pre maxIterations > 0 && cMax > 0 && maxDepth > 0 && c >= 0
+     * @pre maxIterations > 0 &amp;&amp; cMax > 0 &amp;&amp; maxDepth > 0 &amp;&amp; c >= 0
      * @pre fMax >= maxDepth + cMax
      * @pre simulator != null
      */
@@ -131,7 +146,8 @@ public class MCTS {
      * @pos Se o resultado não for nulo, cada estado é sucessor do anterior por um único movimento legal.
      * @pos Se o resultado não for nulo, não há configurações repetidas no caminho.
      * @pos {@code start} e {@code goal} não são modificadas.
-     * @pos Termina antes de maxIterations se a árvore ficar totalmente explorada (raiz esgotada).
+     * @pos Se useExhausted, termina antes de maxIterations se a árvore ficar totalmente explorada (raiz esgotada).
+     * @pos Atualiza {@link #getLastRoot()}, {@link #getLastRawCost()} e {@link #getLastFinalCost()}.
      */
     public Iterator<State> solve(Ilayout start, Ilayout goal) {
         State root = new State(start, null, cMax);
@@ -221,6 +237,8 @@ public class MCTS {
     }
 
     /**
+     * Devolve a raiz da árvore de pesquisa do último {@link #solve}.
+     *
      * @return A raiz da árvore criada pelo último {@link #solve}, ou {@code null} se ainda não foi chamado.
      */
     public State getLastRoot() {
@@ -228,6 +246,8 @@ public class MCTS {
     }
 
     /**
+     * Devolve o custo bruto da melhor solução do último {@link #solve}.
+     *
      * @return O custo da melhor solução do último {@link #solve} antes da remoção de ciclos,
      * ou {@code +infinito} se não houve solução.
      */
@@ -236,6 +256,8 @@ public class MCTS {
     }
 
     /**
+     * Devolve o custo do caminho devolvido pelo último {@link #solve}.
+     *
      * @return O custo do caminho devolvido pelo último {@link #solve} (após remoção de ciclos),
      * ou {@code +infinito} se não houve solução.
      */
@@ -250,9 +272,9 @@ public class MCTS {
      * @param child   O nó a partir do qual foi feita a simulação. Não pode ser nulo.
      * @param simCost O custo estimado de {@code child} até ao objetivo: o custo do rollout,
      *                0 se {@code child} for o objetivo, ou cMax se não houver solução.
-     * @pre child != null && simCost >= 0
+     * @pre child != null &amp;&amp; simCost >= 0
      * @pos O número de visitas de {@code child} e de todos os seus antecessores é incrementado em 1.
-     * @pos Para cada antecessor a, a.getSim() <= child.getG() - a.getG() + simCost.
+     * @pos Para cada antecessor a, a.getSim() &lt;= child.getG() - a.getG() + simCost.
      */
     public void backpropagate(State child, double simCost) {
         State atual = child;
@@ -270,9 +292,9 @@ public class MCTS {
      *
      * @param root A raiz da árvore de pesquisa. Não pode ser nula.
      * @return A folha selecionada.
-     * @pre root != null && !root.isExhausted()
+     * @pre root != null &amp;&amp; !root.isExhausted()
      * @pos O resultado nunca é nulo.
-     * @pos result.isLeaf() == true && !result.isExhausted()
+     * @pos result.isLeaf() == true &amp;&amp; !result.isExhausted()
      * @pos A árvore não é modificada.
      */
     public State select(State root) {
@@ -284,16 +306,16 @@ public class MCTS {
     }
 
     /**
-     * Escolhe o filho de um nó a explorar: o filho não esgotado com maior valor UCB.
-     * Em caso de empate, fica o primeiro na ordem de {@code getChildren()}.
-     * Todos os filhos já foram visitados, pois cada filho é simulado e retropropagado
-     * logo após a expansão.
+     * Escolhe o filho de um nó a explorar: os filhos esgotados são ignorados e o primeiro
+     * filho ainda não visitado é devolvido de imediato; caso contrário, escolhe-se o de
+     * maior valor UCB. Em caso de empate, fica o primeiro na ordem de {@code getChildren()}.
+     * Na prática, todos os filhos já foram visitados, pois cada filho é simulado e
+     * retropropagado logo após a expansão.
      *
      * @param atual O nó cujos filhos são avaliados. Não pode ser nulo, folha nem esgotado.
      * @return O filho escolhido.
      * @throws IllegalStateException se todos os filhos estiverem esgotados (viola a invariante de esgotamento).
-     * @pre atual != null && !atual.isLeaf() && !atual.isExhausted()
-     * @pre Todos os filhos de {@code atual} têm getVisitCount() > 0.
+     * @pre atual != null &amp;&amp; !atual.isLeaf() &amp;&amp; !atual.isExhausted()
      * @pos O resultado pertence a atual.getChildren() e não está esgotado.
      */
     private State bestChild(State atual) {
@@ -329,16 +351,25 @@ public class MCTS {
      * @inv getG() >= 0 e getG() = 0 se e só se o nó for a raiz (porque getK() = 1)
      * @inv getVisitCount() >= 0
      * @inv depth = profundidade do pai + 1 (0 na raiz)
-     * @inv Um nó não-folha está esgotado se e só se todos os seus filhos estiverem esgotados.
+     * @inv Um nó não-folha está esgotado se e só se todos os seus filhos estiverem esgotados
+     * (a marcação só ocorre se o rastreio de nós esgotados estiver ativo).
      */
     public static class State {
+        /** Configuração associada a este nó. */
         private final Ilayout layout;
+        /** Nó pai; {@code null} na raiz. */
         private final State father;
+        /** Custo acumulado desde a raiz. */
         private final double g;
+        /** Filhos já criados; vazia enquanto o nó for folha. */
         private final List<State> children;
+        /** Profundidade na árvore (0 na raiz). */
         private final int depth;
+        /** Número de vezes que o nó foi visitado. */
         private int visitCount;
+        /** Melhor custo estimado, a partir deste nó, obtido nas simulações. */
         private double sim;
+        /** Se não há mais nada a explorar abaixo deste nó. */
         private boolean exhausted = false;
 
         /**
@@ -347,9 +378,9 @@ public class MCTS {
          * @param layout A configuração associada a este nó. Não pode ser nula.
          * @param father O nó pai, ou {@code null} se este nó for a raiz.
          * @param cmax   Valor inicial do custo estimado (sim) deste nó.
-         * @pre layout != null && cmax > 0
+         * @pre layout != null &amp;&amp; cmax > 0
          * @pos getG() = father.getG() + layout.getK(), ou 0 se father == null.
-         * @pos getVisitCount() = 0 && isLeaf() == true && getSim() = cmax
+         * @pos getVisitCount() = 0 &amp;&amp; isLeaf() == true &amp;&amp; getSim() = cmax
          */
         public State(Ilayout layout, State father, double cmax) {
             this.layout = layout;
@@ -407,7 +438,7 @@ public class MCTS {
          * Devolve o melhor custo estimado, a partir deste nó até ao objetivo, obtido nas simulações.
          *
          * @return O valor sim deste nó; cMax se ainda não houve nenhuma simulação melhor.
-         * @pos 0 <= getSim() <= cMax
+         * @pos 0 &lt;= getSim() &lt;= cMax
          */
         public double getSim() {
             return sim;
@@ -439,7 +470,7 @@ public class MCTS {
          * @param cMax     Valor inicial do custo estimado dos novos filhos.
          * @param maxDepth Profundidade máxima permitida na árvore.
          * @return Lista não modificável dos filhos deste nó (vazia se não foi possível expandir).
-         * @pre cMax > 0 && maxDepth > 0
+         * @pre cMax > 0 &amp;&amp; maxDepth > 0
          * @pre isLeaf(), para não duplicar filhos.
          * @pos Se depth >= maxDepth, os filhos não são alterados.
          * @pos Nenhum filho tem configuração igual à do pai deste nó.
@@ -461,8 +492,9 @@ public class MCTS {
         /**
          * Indica se não há mais nada a explorar abaixo deste nó.
          *
-         * @return {@code true} se o nó for uma folha terminal (objetivo ou não expansível)
-         * ou se todos os seus filhos estiverem esgotados; {@code false} caso contrário.
+         * @return {@code true} se o nó tiver sido marcado como esgotado, isto é, se for uma
+         * folha terminal (objetivo ou não expansível) ou se todos os seus filhos estiverem
+         * esgotados; {@code false} caso contrário (incluindo quando o rastreio está desativado).
          */
         public boolean isExhausted() {
             return exhausted;
@@ -474,6 +506,7 @@ public class MCTS {
          *
          * @pos isExhausted() == true
          * @pos Todo o antecessor com todos os filhos esgotados fica esgotado.
+         * @pos A propagação pára no primeiro antecessor com algum filho não esgotado.
          */
         public void markExhausted() {
             State atual = this;
@@ -519,7 +552,7 @@ public class MCTS {
          * @param c               Constante de exploração.
          * @param totalSimulation Número de visitas do nó pai.
          * @return reward(fMax) + c * sqrt(ln(totalSimulation) / getVisitCount()).
-         * @pre fMax > 0 && c >= 0 && totalSimulation >= 1 && getVisitCount() > 0
+         * @pre fMax > 0 &amp;&amp; c >= 0 &amp;&amp; totalSimulation >= 1 &amp;&amp; getVisitCount() > 0
          */
         public double ucb(double fMax, double c, int totalSimulation) {
             return reward(fMax) + c * Math.sqrt(Math.log(totalSimulation) / visitCount);

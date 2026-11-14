@@ -27,9 +27,13 @@ import java.util.*;
  * @inv rnd != null
  */
 public class Simulator {
+    /** Número de rollouts feitos em cada chamada a {@link #simulate}. */
     private final int n;
+    /** Custo máximo de um rollout. */
     private final double cMax;
+    /** Gerador de números aleatórios dos rollouts. */
     private final Random rnd;
+    /** Probabilidade de um passo do rollout ser aleatório. */
     private final double epsilon;
 
     /** Número de rollouts feitos por este simulador (para as experiências). */

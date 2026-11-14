@@ -12,6 +12,10 @@ import java.util.*;
  * transição é dado por {@link Ilayout#getK()}.
  */
 public class AStarSearch {
+    /** Cria uma pesquisa A* sem estado inicial; a fila de abertos é criada em cada {@link #solve}. */
+    public AStarSearch() {
+    }
+
     /** Fila de prioridade dos estados por expandir, ordenada por f. */
     protected Queue<State> abertos;
 
@@ -83,8 +87,11 @@ public class AStarSearch {
      * @inv g &gt;= 0 &amp;&amp; f &gt;= g
      */
     public static class State {
+        /** Configuração associada ao estado. */
         private final Ilayout layout;
+        /** Custo acumulado desde a configuração inicial. */
         private final double g;
+        /** Custo estimado total, g + h. */
         private final double f;
         /** Estado antecessor; {@code null} na raiz. */
         public State father;
@@ -107,23 +114,39 @@ public class AStarSearch {
             f = g + l.getHeuristic(goal);
         }
 
-        /** @return a representação textual da configuração do estado. */
+        /**
+         * Devolve a representação textual do estado.
+         *
+         * @return a representação textual da configuração do estado.
+         */
         @Override
         public String toString() {
             return layout.toString();
         }
 
-        /** @return o custo acumulado desde a configuração inicial. */
+        /**
+         * Devolve o custo acumulado.
+         *
+         * @return o custo acumulado desde a configuração inicial.
+         */
         public double getG() {
             return g;
         }
 
-        /** @return o custo estimado total, g + h. */
+        /**
+         * Devolve o custo estimado total.
+         *
+         * @return o custo estimado total, g + h.
+         */
         public double getF() {
             return f;
         }
 
-        /** @return o hash da configuração do estado. */
+        /**
+         * Devolve o hash do estado, igual ao da sua configuração.
+         *
+         * @return o hash da configuração do estado.
+         */
         @Override
         public int hashCode() {
             return layout.hashCode();

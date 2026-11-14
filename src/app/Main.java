@@ -13,15 +13,26 @@ import java.util.Scanner;
  * Ponto de entrada da aplicação. Lê do standard input uma configuração do puzzle
  * Ball Sort (altura, número de tubos e uma linha por nível) e resolve-a com MCTS,
  * escrevendo o custo da solução encontrada ou {@code "no solution found"}.
+ * O MCTS é executado com o rastreio de nós esgotados ativo.
  */
 public class Main {
+    /** Classe de arranque; não deve ser instanciada. */
+    private Main() {
+    }
 
-    private static final double DEFAULT_CMAX = 500;    // era 200
-    private static final int DEFAULT_N = 1;         // era 10
-    private static final double DEFAULT_C = 0.3;       // era 0.05
-    private static final int DEFAULT_ITERATIONS = 15000; // era 5000
-    private static final int DEFAULT_MAX_DEPTH = 60;     // era 200
+    /** Custo máximo de um rollout por omissão. */
+    private static final double DEFAULT_CMAX = 500;
+    /** Número de rollouts por simulação por omissão. */
+    private static final int DEFAULT_N = 1;
+    /** Constante de exploração do UCB por omissão. */
+    private static final double DEFAULT_C = 0.3;
+    /** Número máximo de iterações do MCTS por omissão. */
+    private static final int DEFAULT_ITERATIONS = 15000;
+    /** Profundidade máxima da árvore por omissão. */
+    private static final int DEFAULT_MAX_DEPTH = 60;
+    /** Semente do gerador aleatório por omissão. */
     private static final long DEFAULT_SEED = 42;
+    /** Probabilidade de passo aleatório nos rollouts por omissão. */
     private static final double DEFAULT_EPSILON = 0.1;
 
     /**
@@ -31,6 +42,8 @@ public class Main {
      * {@code c} (constante de exploração), {@code iterations}, {@code maxDepth},
      * {@code seed} e {@code epsilon} (probabilidade de exploração no rollout epsilon-greedy).
      * Os não indicados assumem os valores por omissão. O limite {@code fmax} é {@code cMax + maxDepth}.
+     * A configuração é lida como: altura, número de tubos e, depois, uma linha por nível.
+     * Escreve o custo (inteiro) da solução, ou {@code "no solution found"}.
      *
      * @param args argumentos opcionais da linha de comandos, descritos acima.
      * @throws IllegalArgumentException se alguma linha da configuração não tiver o número de tubos indicado.

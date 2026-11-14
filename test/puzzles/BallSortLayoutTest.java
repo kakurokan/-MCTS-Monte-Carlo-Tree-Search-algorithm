@@ -9,6 +9,10 @@ import java.util.Random;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * Testes unitários do {@link BallSortLayout}, em particular de {@link BallSortLayout#randomChild}:
+ * validade dos filhos sorteados, evitar o estado indicado e ausência de movimentos possíveis.
+ */
 public class BallSortLayoutTest {
 
     @Nested

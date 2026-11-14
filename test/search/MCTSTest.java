@@ -10,8 +10,12 @@ import java.util.Random;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Testes unitários e de integração do {@link MCTS} e da sua classe interna {@link MCTS.State}.
- * - validação de parâmetros, recompensa, atualização de custos, expansão e retropropagação.
+ * Testes unitários e de integração do {@link MCTS} e da sua classe interna {@link MCTS.State}:
+ * <ul>
+ *   <li>validação de parâmetros, recompensa, atualização de custos, expansão e retropropagação;</li>
+ *   <li>marcação e propagação de nós esgotados, e seleção que os ignora;</li>
+ *   <li>resolução de puzzles, custo bruto versus final e o caso sem solução.</li>
+ * </ul>
  */
 public class MCTSTest {
 

@@ -45,7 +45,6 @@ import java.util.Random;
  * NOTA DE EXECUÇÃO: esta classe deve ser executada a partir da raiz do repositório
  * para que os caminhos da diretoria "instancias/" sejam lidos corretamente.
  */
-
 public class Experiments {
 
     /** Classe utilitária apenas com métodos estáticos; não deve ser instanciada. */
@@ -85,24 +84,46 @@ public class Experiments {
         }
     }
 
-    /** Parâmetros comuns a todas as experiências. */
+    /** Constante de exploração do UCB. */
     private static final double C = 0.3;
+    /** Custo máximo de um rollout (valor base). */
     private static final double CMAX = 500.0;
+    /** Probabilidade de passo aleatório no rollout (valor base). */
     private static final double EPSILON = 0.1;
+    /** Número de rollouts por simulação (valor base). */
     private static final int N = 1;
+    /** Profundidade máxima da árvore de pesquisa. */
     private static final int MAX_DEPTH = 100;
+    /** Número máximo de iterações do MCTS (valor base). */
     private static final int MAX_ITERATIONS = 15000;
+    /** Ficheiro da instância {@code muito_dificil}. */
     private static final String FICHEIRO_MUITO_DIFICIL = "instancias/muito_dificil_opt65.txt";
+    /** Nome da instância {@code muito_dificil} nos CSV. */
     private static final String LABEL_MUITO_DIFICIL = "muito_dificil";
+    /** Custo ótimo conhecido da instância {@code muito_dificil}. */
     private static final double OTIMO_MUITO_DIFICIL = 65.0;
 
-    /** Resultado de uma execução do MCTS: o simulador usado (para as suas métricas), custos, tempo e sucesso. */
+    /**
+     * Resultado de uma execução do MCTS.
+     *
+     * @param sim        simulador usado, com as suas métricas (rollouts, cortes e becos).
+     * @param custoBruto custo da melhor solução antes da remoção de ciclos; -1 se não foi resolvido.
+     * @param custo      custo do caminho final, sem ciclos; -1 se não foi resolvido.
+     * @param tempoMs    tempo de execução em milissegundos.
+     * @param resolvido  {@code true} se foi encontrada uma solução.
+     */
     private record Execucao(Simulator sim, double custoBruto, double custo, long tempoMs, boolean resolvido) {
     }
 
     /** Corpo de uma experiência: recebe o escritor do CSV já aberto e com o cabeçalho escrito. */
     @FunctionalInterface
     private interface CorpoExperiencia {
+        /**
+         * Corre a experiência, escrevendo as linhas de dados no CSV.
+         *
+         * @param writer escritor do CSV, com o cabeçalho já escrito.
+         * @throws IOException se ocorrer um erro de leitura ou escrita.
+         */
         void correr(PrintWriter writer) throws IOException;
     }
 
