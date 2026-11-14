@@ -304,6 +304,8 @@ public class MCTS {
         for (State child : atual.getChildren()) {
             if (child.isExhausted()) continue;
 
+            if (child.getVisitCount() == 0) return child;
+
             double value = child.ucb(fMax, c, atual.getVisitCount());
 
             if (value > bestValue) {
