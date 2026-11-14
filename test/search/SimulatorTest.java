@@ -174,5 +174,35 @@ public class SimulatorTest {
             assertThat(result.getCost()).isEqualTo(50.0);
             assertThat(result.getPath()).isNull();
         }
+
+        @Test
+        public void shouldMaintainConsistentCounters_acrossDifferentRolloutOutcomes() {
+            Simulator simulator = new Simulator(2, 2.0, new Random(42), 1.0);
+            BallSortLayout goalLayout = new BallSortLayout("A B E\nA B E");
+            BallSortLayout startLayout = new BallSortLayout("A B E\nB A E");
+            BallSortLayout deadEndLayout = new BallSortLayout("A B C\nB C A");
+
+            // 1. Cenário de sucesso
+            simulator.simulate(goalLayout, goalLayout);
+            assertThat(simulator.getRolloutCount()).isEqualTo(2);
+            assertThat(simulator.getCutCount()).isEqualTo(0);
+            assertThat(simulator.getDeadEndCount()).isEqualTo(0);
+
+            // 2. Cenário de corte em cMax
+            simulator.simulate(startLayout, goalLayout);
+            assertThat(simulator.getRolloutCount()).isEqualTo(4);
+            assertThat(simulator.getCutCount()).isEqualTo(2);
+            assertThat(simulator.getDeadEndCount()).isEqualTo(0);
+
+            // 3. Cenário de beco sem saída
+            simulator.simulate(deadEndLayout, goalLayout);
+            assertThat(simulator.getRolloutCount()).isEqualTo(6);
+            assertThat(simulator.getCutCount()).isEqualTo(2);
+            assertThat(simulator.getDeadEndCount()).isEqualTo(2);
+
+            // Verificação da pós-condição global: rollouts >= cortados + becos
+            assertThat(simulator.getRolloutCount())
+                    .isGreaterThanOrEqualTo(simulator.getCutCount() + simulator.getDeadEndCount());
+        }
     }
 }
