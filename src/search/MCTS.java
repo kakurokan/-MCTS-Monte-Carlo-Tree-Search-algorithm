@@ -105,7 +105,7 @@ public class MCTS {
      * restantes.
      * @pre ilayouts != null
      */
-    private static List<Ilayout> removeCyles(List<Ilayout> ilayouts) {
+    private static List<Ilayout> removeCycles(List<Ilayout> ilayouts) {
         List<Ilayout> clean = new ArrayList<>();
         Map<Ilayout, Integer> pos = new HashMap<>();
 
@@ -220,7 +220,7 @@ public class MCTS {
         for (State s : path) {
             ilayouts.add(s.layout);
         }
-        ilayouts = removeCyles(ilayouts);
+        ilayouts = removeCycles(ilayouts);
 
         List<State> finalPath = new ArrayList<>();
         State prev = null;
