@@ -1,5 +1,7 @@
 # Ball Sort com Monte Carlo Tree Search
 
+![CI](https://github.com/kakurokan/ballsort-mcts/actions/workflows/ci.yml/badge.svg) ![Java 17+](https://img.shields.io/badge/Java-17%2B-blue)
+
 Solucionador do puzzle **Ball Sort** em Java, usando **Monte Carlo Tree Search (MCTS)**
 com rollouts ε-greedy guiados por heurística. Inclui também uma pesquisa **A\*** de
 referência e um conjunto de experiências para avaliar a influência dos parâmetros.
@@ -30,6 +32,25 @@ test/                            Testes JUnit 5 + AssertJ
 instancias/                      Instâncias de teste (o sufixo _optN indica o custo ótimo N)
 ```
 
+## Resultados
+
+Instância `muito_dificil` (custo ótimo conhecido: 65 movimentos), 30 sementes por configuração,
+15 000 iterações, `epsilon = 0.1`, `c = 0.3`, `maxDepth = 100`. Todas as execuções encontraram solução.
+
+| Configuração    | Custo médio | Melhor | Tempo médio |
+|-----------------|-------------|--------|-------------|
+| `cMax=130, n=1` | 67.8        | 67     | 45 s        |
+| `cMax=200, n=1` | 68.1        | 66     | 45 s        |
+| `cMax=325, n=1` | 69.6        | 67     | 51 s        |
+| `cMax=500, n=1` | 70.6        | 68     | 62 s        |
+| `cMax=500, n=3` | 70.5        | 69     | 72 s        |
+| `cMax=500, n=5` | 70.6        | 69     | 79 s        |
+
+Conclusões: um `cMax` mais baixo dá soluções melhores e mais rápidas (os rollouts longos
+acrescentam ruído), e mais rollouts por simulação (`n`) só aumentam o tempo. Na instância `dificil`
+(ótimo 37) o MCTS encontra o ótimo com os parâmetros por omissão. Os CSV completos são gerados
+pelo modo `parametros` das experiências (ver abaixo).
+
 ## Como funciona
 
 Em cada iteração do MCTS:
@@ -54,6 +75,8 @@ mkdir -p out/production
 javac -d out/production $(find src -name '*.java')
 ```
 
+Em alternativa, com Maven: `mvn package` (compila e corre os testes).
+
 ## Executar
 
 ### Resolver uma instância
@@ -75,7 +98,7 @@ java -cp out/production app.Main [cMax] [n] [c] [iterations] [maxDepth] [seed] [
 
 | Argumento    | Significado                                     | Omissão |
 |--------------|-------------------------------------------------|---------|
-| `cMax`       | Custo máximo de um rollout                      | 500     |
+| `cMax`       | Custo máximo de um rollout                      | 130     |
 | `n`          | Rollouts por simulação                          | 1       |
 | `c`          | Constante de exploração do UCB                  | 0.3     |
 | `iterations` | Número máximo de iterações                      | 15000   |
@@ -90,7 +113,8 @@ usar com o `Main`, acrescenta-a:
 
 ```bash
 f=instancias/dificil_opt37.txt
-(echo "$(wc -l < $f) $(head -1 $f | wc -w)"; cat $f) | java -cp out/production app.Main
+(echo "$(grep -c '' $f) $(head -1 $f | wc -w)"; cat $f) | java -cp out/production app.Main
+# 37  (custo ótimo, ~20 s com os parâmetros por omissão)
 ```
 
 ### Experiências
@@ -109,8 +133,13 @@ java -cp out/production app.Experiments [epsilon|exaustos|parametros] [numSement
 
 ## Testes
 
-Os testes usam JUnit 5 e AssertJ. Correm-se pelo IDE (IntelliJ) ou com um executor JUnit à
-escolha, tendo as bibliotecas no classpath.
+Os testes (41 casos, JUnit 5 + AssertJ) cobrem o `BallSortLayout`, o `Simulator` e o `MCTS`.
+
+```bash
+mvn test
+```
+
+A integração contínua (GitHub Actions) corre-os em cada push.
 
 ## Documentação
 
@@ -121,6 +150,10 @@ isso têm de ser registadas ao gerar a documentação:
 javadoc -private -d docs -sourcepath src -subpackages app:core:puzzles:search \
   -tag pre:a:"Pré-condição:" -tag pos:a:"Pós-condição:" -tag inv:a:"Invariante:"
 ```
+
+## Relatório
+
+O relatório do trabalho, com a análise das experiências, está em [docs/Relatorio.pdf](docs/Relatorio.pdf).
 
 ## Licença
 

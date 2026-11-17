@@ -21,7 +21,7 @@ public class Main {
     }
 
     /** Custo máximo de um rollout por omissão. */
-    private static final double DEFAULT_CMAX = 500;
+    private static final double DEFAULT_CMAX = 130;
     /** Número de rollouts por simulação por omissão. */
     private static final int DEFAULT_N = 1;
     /** Constante de exploração do UCB por omissão. */

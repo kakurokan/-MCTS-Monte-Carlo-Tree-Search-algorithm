@@ -33,3 +33,8 @@ mcts_experiments_results.csv
 exp_exaustos.csv
 
 exp_parametros.csv
+# Maven / logs
+target/
+parametros.log
+out/
+*.csv
