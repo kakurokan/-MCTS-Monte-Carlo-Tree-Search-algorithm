@@ -159,3 +159,7 @@ The project report, with the analysis of the experiments, is in
 ## License
 
 See [LICENSE](LICENSE).
+
+## Author
+
+[kakurokan](https://github.com/kakurokan) on GitHub.
