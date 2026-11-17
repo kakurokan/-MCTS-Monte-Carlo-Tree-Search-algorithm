@@ -1,88 +1,88 @@
-# Ball Sort com Monte Carlo Tree Search
+# Ball Sort with Monte Carlo Tree Search
 
 ![CI](https://github.com/kakurokan/ballsort-mcts/actions/workflows/ci.yml/badge.svg) ![Java 17+](https://img.shields.io/badge/Java-17%2B-blue)
 
-Solucionador do puzzle **Ball Sort** em Java, usando **Monte Carlo Tree Search (MCTS)**
-com rollouts ε-greedy guiados por heurística. Inclui também uma pesquisa **A\*** de
-referência e um conjunto de experiências para avaliar a influência dos parâmetros.
+A **Ball Sort** puzzle solver in Java using **Monte Carlo Tree Search (MCTS)** with
+heuristic-guided ε-greedy rollouts. It also includes a reference **A\*** search and a set of
+experiments that measure the influence of the parameters.
 
-## O puzzle
+## The puzzle
 
-Existem vários tubos (pilhas) com a mesma capacidade, preenchidos com bolas de várias cores.
-Um movimento transfere a bola do topo de um tubo para outro tubo que não esteja cheio e que
-esteja vazio ou tenha uma bola da mesma cor no topo. O objetivo é que cada tubo fique vazio ou
-cheio com uma só cor. Cada movimento custa 1, pelo que o custo de uma solução é o seu número de
-movimentos.
+There are several tubes (stacks) of equal capacity, filled with balls of various colors.
+A move transfers the top ball of one tube to another tube that is not full and that is either
+empty or has a ball of the same color on top. The goal is for every tube to be empty or full
+with a single color. Each move costs 1, so the cost of a solution is its number of moves.
 
-## Estrutura do projeto
+## Project structure
 
 ```
 src/
-├── core/Ilayout.java            Interface de uma configuração (sucessores, custo, heurística, objetivo)
-├── puzzles/BallSortLayout.java  Configuração do Ball Sort
+├── core/Ilayout.java            Interface for a configuration (successors, cost, heuristic, goal)
+├── puzzles/BallSortLayout.java  Ball Sort configuration
 ├── search/
-│   ├── MCTS.java                MCTS (seleção UCB, expansão, simulação, retropropagação)
-│   ├── Simulator.java           Rollouts ε-greedy; estima o custo a partir de um nó
-│   ├── SimResult.java           Resultado de uma simulação (custo e caminho)
-│   └── AStarSearch.java         Pesquisa A* de referência
+│   ├── MCTS.java                MCTS (UCB selection, expansion, simulation, backpropagation)
+│   ├── Simulator.java           ε-greedy rollouts; estimates the cost from a node
+│   ├── SimResult.java           Result of a simulation (cost and path)
+│   └── AStarSearch.java         Reference A* search
 └── app/
-    ├── Main.java                Resolve uma instância lida do standard input
-    └── Experiments.java         Benchmarks que escrevem ficheiros CSV
-test/                            Testes JUnit 5 + AssertJ
-instancias/                      Instâncias de teste (o sufixo _optN indica o custo ótimo N)
+    ├── Main.java                Solves an instance read from standard input
+    └── Experiments.java         Benchmarks that write CSV files
+test/                            JUnit 5 + AssertJ tests
+instancias/                      Test instances (the _optN suffix is the optimal cost N)
+docs/Relatorio.pdf               Project report (in Portuguese)
 ```
 
-## Resultados
+## Results
 
-Instância `muito_dificil` (custo ótimo conhecido: 65 movimentos), 30 sementes por configuração,
-15 000 iterações, `epsilon = 0.1`, `c = 0.3`, `maxDepth = 100`. Todas as execuções encontraram solução.
+`muito_dificil` instance (known optimal cost: 65 moves), 30 seeds per configuration,
+15,000 iterations, `epsilon = 0.1`, `c = 0.3`, `maxDepth = 100`. Every run found a solution.
 
-| Configuração    | Custo médio | Melhor | Tempo médio |
-|-----------------|-------------|--------|-------------|
-| `cMax=130, n=1` | 67.8        | 67     | 45 s        |
-| `cMax=200, n=1` | 68.1        | 66     | 45 s        |
-| `cMax=325, n=1` | 69.6        | 67     | 51 s        |
-| `cMax=500, n=1` | 70.6        | 68     | 62 s        |
-| `cMax=500, n=3` | 70.5        | 69     | 72 s        |
-| `cMax=500, n=5` | 70.6        | 69     | 79 s        |
+| Configuration   | Mean cost | Best | Mean time |
+|-----------------|-----------|------|-----------|
+| `cMax=130, n=1` | 67.8      | 67   | 45 s      |
+| `cMax=200, n=1` | 68.1      | 66   | 45 s      |
+| `cMax=325, n=1` | 69.6      | 67   | 51 s      |
+| `cMax=500, n=1` | 70.6      | 68   | 62 s      |
+| `cMax=500, n=3` | 70.5      | 69   | 72 s      |
+| `cMax=500, n=5` | 70.6      | 69   | 79 s      |
 
-Conclusões: um `cMax` mais baixo dá soluções melhores e mais rápidas (os rollouts longos
-acrescentam ruído), e mais rollouts por simulação (`n`) só aumentam o tempo. Na instância `dificil`
-(ótimo 37) o MCTS encontra o ótimo com os parâmetros por omissão. Os CSV completos são gerados
-pelo modo `parametros` das experiências (ver abaixo).
+Takeaways: a lower `cMax` gives better and faster solutions (long rollouts add noise), and
+more rollouts per simulation (`n`) only increase the running time. On the `dificil` instance
+(optimal cost 37) MCTS finds the optimum with the default parameters. The full CSV files are
+produced by the `parametros` experiment mode (see below).
 
-## Como funciona
+## How it works
 
-Em cada iteração do MCTS:
+Each MCTS iteration:
 
-1. **Seleção**: desce da raiz até uma folha, escolhendo o filho não esgotado com maior UCB.
-2. **Expansão**: cria os filhos da folha (até `maxDepth`).
-3. **Simulação**: para cada filho, o `Simulator` faz `n` rollouts e devolve o de menor custo.
-   Em cada passo, com probabilidade `epsilon` o movimento é aleatório; caso contrário
-   escolhe-se o sucessor de menor heurística.
-4. **Retropropagação**: atualiza visitas e o melhor custo estimado do nó e dos seus antecessores.
+1. **Selection**: descend from the root to a leaf, picking the non-exhausted child with the highest UCB.
+2. **Expansion**: create the leaf's children (up to `maxDepth`).
+3. **Simulation**: for each child, the `Simulator` runs `n` rollouts and returns the cheapest one.
+   At each step, with probability `epsilon` the move is random; otherwise the successor with
+   the lowest heuristic value is chosen.
+4. **Backpropagation**: update the visit counts and the best estimated cost of the node and its ancestors.
 
-A melhor solução encontrada é guardada, limpa de ciclos e devolvida no fim. Com o rastreio de
-**nós esgotados** ativo, os ramos totalmente explorados deixam de ser selecionados e a pesquisa
-termina cedo quando a árvore fica toda explorada.
+The best solution found is kept, stripped of cycles and returned at the end. With
+**exhausted-node tracking** enabled, fully explored branches are no longer selected and the
+search stops early once the whole tree has been explored.
 
-## Compilar
+## Build
 
-Requer JDK 17 ou superior (o código usa `record`).
+Requires JDK 17 or later (the code uses `record`).
 
 ```bash
 mkdir -p out/production
 javac -d out/production $(find src -name '*.java')
 ```
 
-Em alternativa, com Maven: `mvn package` (compila e corre os testes).
+Alternatively, with Maven: `mvn package` (compiles and runs the tests).
 
-## Executar
+## Run
 
-### Resolver uma instância
+### Solving an instance
 
-O `Main` lê do standard input a **altura**, o **número de tubos** e depois uma linha por nível
-(do topo para a base), com as bolas separadas por espaços e `E` nas posições vazias:
+`Main` reads the **height**, the **number of tubes** and then one line per level
+(top to bottom) from standard input, with balls separated by spaces and `E` for empty slots:
 
 ```
 4 3
@@ -93,68 +93,69 @@ B A E
 ```
 
 ```bash
-java -cp out/production app.Main [cMax] [n] [c] [iterations] [maxDepth] [seed] [epsilon] < entrada.txt
+java -cp out/production app.Main [cMax] [n] [c] [iterations] [maxDepth] [seed] [epsilon] < input.txt
 ```
 
-| Argumento    | Significado                                     | Omissão |
+| Argument     | Meaning                                         | Default |
 |--------------|-------------------------------------------------|---------|
-| `cMax`       | Custo máximo de um rollout                      | 130     |
-| `n`          | Rollouts por simulação                          | 1       |
-| `c`          | Constante de exploração do UCB                  | 0.3     |
-| `iterations` | Número máximo de iterações                      | 15000   |
-| `maxDepth`   | Profundidade máxima da árvore                   | 60      |
-| `seed`       | Semente do gerador aleatório                    | 42      |
-| `epsilon`    | Probabilidade de passo aleatório no rollout     | 0.1     |
+| `cMax`       | Maximum cost of a rollout                       | 130     |
+| `n`          | Rollouts per simulation                         | 1       |
+| `c`          | UCB exploration constant                        | 0.3     |
+| `iterations` | Maximum number of iterations                    | 15000   |
+| `maxDepth`   | Maximum tree depth                              | 60      |
+| `seed`       | Random number generator seed                    | 42      |
+| `epsilon`    | Probability of a random step in a rollout       | 0.1     |
 
-A saída é o custo (número de movimentos) da solução, ou `no solution found`.
+The output is the cost (number of moves) of the solution, or `no solution found`.
 
-Os ficheiros em `instancias/` não têm a primeira linha com a altura e o número de tubos; para os
-usar com o `Main`, acrescenta-a:
+The files in `instancias/` do not have the first line with the height and number of tubes; to
+use them with `Main`, prepend it:
 
 ```bash
 f=instancias/dificil_opt37.txt
 (echo "$(grep -c '' $f) $(head -1 $f | wc -w)"; cat $f) | java -cp out/production app.Main
-# 37  (custo ótimo, ~20 s com os parâmetros por omissão)
+# 37  (optimal cost, ~20 s with the default parameters)
 ```
 
-### Experiências
+### Experiments
 
-Executar a partir da raiz do repositório (as instâncias são lidas de `instancias/`):
+Run from the repository root (instances are read from `instancias/`):
 
 ```bash
-java -cp out/production app.Experiments [epsilon|exaustos|parametros] [numSementes]
+java -cp out/production app.Experiments [epsilon|exaustos|parametros] [numSeeds]
 ```
 
-| Modo                    | O que faz                                                         | Saída                           |
-|-------------------------|-------------------------------------------------------------------|---------------------------------|
-| `epsilon` (por omissão) | Varia epsilon (0.0, 0.1, 0.3, 1.0) em duas instâncias, sementes 1–30 | `mcts_experiments_results.csv` |
-| `exaustos`              | Compara o MCTS com e sem rastreio de nós esgotados                | `exp_exaustos.csv`              |
-| `parametros`            | Varia `cMax` (130–500) e `n` (1, 3, 5); `numSementes` por omissão 30 | `exp_parametros.csv`        |
+| Mode                | What it does                                                          | Output                         |
+|---------------------|-----------------------------------------------------------------------|--------------------------------|
+| `epsilon` (default) | Varies epsilon (0.0, 0.1, 0.3, 1.0) on two instances, seeds 1–30      | `mcts_experiments_results.csv` |
+| `exaustos`          | Compares MCTS with and without exhausted-node tracking                | `exp_exaustos.csv`             |
+| `parametros`        | Varies `cMax` (130–500) and `n` (1, 3, 5); `numSeeds` defaults to 30  | `exp_parametros.csv`           |
 
-## Testes
+## Tests
 
-Os testes (41 casos, JUnit 5 + AssertJ) cobrem o `BallSortLayout`, o `Simulator` e o `MCTS`.
+The tests (41 cases, JUnit 5 + AssertJ) cover `BallSortLayout`, `Simulator` and `MCTS`.
 
 ```bash
 mvn test
 ```
 
-A integração contínua (GitHub Actions) corre-os em cada push.
+Continuous integration (GitHub Actions) runs them on every push.
 
-## Documentação
+## Documentation
 
-O código está documentado com Javadoc. As tags `@pre`, `@pos` e `@inv` são personalizadas, por
-isso têm de ser registadas ao gerar a documentação:
+The code is documented with Javadoc (in Portuguese). The `@pre`, `@pos` and `@inv` tags are
+custom, so they must be registered when generating the documentation:
 
 ```bash
-javadoc -private -d docs -sourcepath src -subpackages app:core:puzzles:search \
+javadoc -private -d docs/api -sourcepath src -subpackages app:core:puzzles:search \
   -tag pre:a:"Pré-condição:" -tag pos:a:"Pós-condição:" -tag inv:a:"Invariante:"
 ```
 
-## Relatório
+## Report
 
-O relatório do trabalho, com a análise das experiências, está em [docs/Relatorio.pdf](docs/Relatorio.pdf).
+The project report, with the analysis of the experiments, is in
+[docs/Relatorio.pdf](docs/Relatorio.pdf) (written in Portuguese).
 
-## Licença
+## License
 
-Ver [LICENSE](LICENSE).
+See [LICENSE](LICENSE).
